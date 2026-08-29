@@ -258,7 +258,8 @@ test("프롬프트 인젝션이 미션·리액션으로 새지 않는다 (AI 가
   // 여기까지 폴백이었다면 위 단언들은 인젝션을 하나도 검증하지 못한 것이다.
   expect(
     { board: board.isFallback, mc: mc.isFallback },
-    "AI 가 폴백으로만 응답했다 — 인젝션 내성을 검증하지 못했다(GEMINI_API_KEY/모델 확인)",
+    "AI 가 폴백으로만 응답해 인젝션 내성을 검증하지 못했다 — Gemini 쿼터/키 확인 " +
+      "(2026-08-29 기준 무료 티어 쿼터 소진으로 전 AI 라우트가 429 → 폴백)",
   ).toEqual({ board: false, mc: false });
 });
 
