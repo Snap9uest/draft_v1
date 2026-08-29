@@ -44,10 +44,12 @@ jobs:
         run: npx eslint .
 
       # Catches a key pasted into tracked source. .env files are ignored, so a
-      # hit here means it reached a file that would ship.
+      # hit here means it reached a file that would ship. This file is excluded
+      # because it necessarily contains the patterns it searches for.
       - name: Check for committed secrets
         run: |
-          if git grep -nIE 'AIza[0-9A-Za-z_-]{35}|sbp_[0-9a-f]{40}|eyJhbGciOiJIUzI1NiIs' -- ':!*.md' ':!package-lock.json'; then
+          if git grep -nIE 'AIza[0-9A-Za-z_-]{35}|sbp_[0-9a-f]{40}|eyJhbGciOiJIUzI1NiIs' \
+              -- ':!*.md' ':!package-lock.json' ':!.github/workflows/ci.yml'; then
             echo "::error::A credential appears to be committed. Move it to .env.local and rotate the key."
             exit 1
           fi

@@ -501,7 +501,6 @@ function isSafeUrl(u: unknown): u is string {
 }
 
 /** 개행·제어문자는 fillText 에서 두부로 찍힌다. 길이도 여기서 자른다. */
-// eslint-disable-next-line no-control-regex
 const CONTROL_OR_SPACE = /[\s\u0000-\u001f\u007f]+/g;
 
 function clean(s: unknown, max: number): string {

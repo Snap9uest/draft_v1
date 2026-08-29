@@ -48,7 +48,6 @@ const INNER_W = CARD_W - BORDER * 2;
 /** 4컷 2×2 확정. 세로 4컷 스트립은 1:4.67 이라 1080×1920 에 산술적으로 안 들어간다. */
 const CELL_W = Math.floor((INNER_W - SPACING) / 2);
 const CELL_H = Math.round(CELL_W / CELL_ASPECT);
-const GRID_W = CELL_W * 2 + SPACING;
 const GRID_H = CELL_H * 2 + SPACING;
 
 /**
