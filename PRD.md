@@ -55,7 +55,7 @@
     - 호스트 뷰(`?role=host`)의 `HostControlPanel` 하단에 `HostPhotoWallControl`을 탭/섹션으로 통합 연동
   - *Done when*: 호스트가 `[파티 시작]` 클릭 시 TV 화면이 QR 로비에서 라이브 포토월로 부드럽게 자동 전환됨
 
-- [ ] **Task 6: F4 전체 인터랙션 검증 및 빌드 확인**
+- [x] **Task 6: F4 전체 인터랙션 검증 및 빌드 확인**
   - 시드 사진 렌더링 → 호스트 사진 숨김 → TV 즉시 반영 → 파티 생애주기 연동 전체 플로우 검증
   - 전체 프로젝트 빌드(`npm run build`) 확인
   - *Done when*: `npm run build` 성공 및 에러 없이 모든 화면이 매끄럽게 동작함
