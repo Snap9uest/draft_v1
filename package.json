@@ -1,0 +1,43 @@
+{
+  "name": "draft_v1",
+  "version": "1.0.0",
+  "description": "Party photo bingo and a four-cut keepsake: AI deals each guest a different 3x3 photo-mission bingo board, and when the party ends, the board becomes a personalized four-cut ticket.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Snap9uest/draft_v1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Snap9uest/draft_v1/issues"
+  },
+  "homepage": "https://github.com/Snap9uest/draft_v1#readme",
+  "dependencies": {
+    "lucide-react": "^1.35.0",
+    "next": "^16.3.3",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "autoprefixer": "^10.5.4",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.3",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^6.0.3"
+  }
+}
