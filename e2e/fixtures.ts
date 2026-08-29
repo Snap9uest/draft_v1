@@ -24,7 +24,7 @@ export const test = base.extend<Fixtures>({
 
   guest: async ({ request, page, room }, use) => {
     const joined = await joinRoom(request, room.code);
-    await useSession(page, joined.sessionToken);
+    await seedSession(page, joined.sessionToken);
     await use(joined);
   },
 });
