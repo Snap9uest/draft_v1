@@ -35,7 +35,7 @@
   - 조작 버튼이 전혀 없는 표시 전용(Display-only) UI
   - *Done when*: `TvPhotoWall` 컴포넌트가 목(Mock) 데이터로 레이아웃과 애니메이션을 정상 렌더링함
 
-- [ ] **Task 3: 호스트용 사진 숨김/복구 컨트롤 패널 구현 (`components/photowall/HostPhotoWallControl.tsx`)**
+- [x] **Task 3: 호스트용 사진 숨김/복구 컨트롤 패널 구현 (`components/photowall/HostPhotoWallControl.tsx`)**
   - 모바일 화면에 최적화된 업로드 사진 카드 리스트
   - 각 사진별 **[숨김 / 복구]** 원클릭 토글 버튼
   - 숨김 상태 표시 배지 및 필터 (전체 / 노출 중 / 숨김)

@@ -99,3 +99,12 @@ Next Task: Task 1 - F4 데이터 타입 정의 및 시드/프리셋 데이터 �
   - 신규 사진 도착 시 중앙 강조 팝업(Pop-in), 숨김 처리 필터링, 사진 0장 시 시드 콘텐츠 렌더링 로직 추가.
   - `npm run build`를 통해 빌드 에러 없이 정상적으로 컴파일되는 것 확인.
 - **다음 태스크**: Task 3 - 호스트용 사진 숨김/복구 컨트롤 패널 구현 (`components/photowall/HostPhotoWallControl.tsx`)
+
+=== [2026-08-29] Task 3 Completed ===
+- **작업 내역**:
+  - `components/photowall/HostPhotoWallControl.tsx` 생성: 모바일 화면에 최적화된 업로드 사진 카드 리스트 구현.
+  - 각 사진별 **[숨김 / 복구]** 원클릭 토글 버튼 추가 및 시각적 피드백(배경색, 뱃지 등) 제공.
+  - '전체', '노출 중', '숨김' 상태를 보여주는 배지 및 필터 기능 구현.
+  - 시뮬레이션용 '테스트 사진 추가' 버튼 및 인터랙션을 테스트하기 위한 임시 페이지(`app/test-photowall/page.tsx`) 구현.
+  - `npm run build`를 통해 타입 에러 없이 성공적으로 빌드되는 것 확인.
+- **다음 태스크**: Task 4 - 포토월 상태 관리 훅 (`hooks/usePhotoWall.ts`) 및 실시간 동기화
