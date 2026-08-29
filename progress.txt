@@ -116,3 +116,12 @@ Next Task: Task 1 - F4 데이터 타입 정의 및 시드/프리셋 데이터 �
   - `document.addEventListener('visibilitychange')`를 통한 재동기화 로직 구현
   - `app/test-photowall/page.tsx` 및 `components/photowall/TvPhotoWall.tsx`에 훅 적용 및 `roomId` 의존성 주입
 - **다음 태스크**: Task 5 - F9 호스트 진행 도구와 F4 라이브 포토월 뷰 통합 라우팅
+
+=== [2026-08-29] Task 5 Completed ===
+- **작업 내역**:
+  - `components/room/TvLobbyView.tsx` 업데이트: 방 상태가 `live`일 때 `TvPhotoWall`이 자동으로 렌더링되도록 연동
+  - `components/host/HostControlPanel.tsx` 업데이트: `usePhotoWall` 훅을 도입하고 하단에 `HostPhotoWallControl` 통합 연동
+  - 테스트용 사진 추가 버튼(`handleAddTestPhoto`) 구현 및 연결
+  - `timestamp` 데이터 타입을 number(`Date.now()`)로 수정하여 타입 에러 해결
+  - `npm run build`를 통해 빌드 에러 없이 성공적으로 컴파일되는 것을 확인
+- **다음 태스크**: Task 6 - F4 전체 인터랙션 검증 및 빌드 확인

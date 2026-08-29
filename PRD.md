@@ -49,7 +49,7 @@
   - 탭 비활성화 후 복귀 시 자동 재동기화(`visibilitychange` 이벤트 리스너)
   - *Done when*: 훅을 통해 사진 추가 및 숨김 처리 시 TV 뷰와 호스트 뷰에 즉시 동기화 반영
 
-- [ ] **Task 5: F9 호스트 진행 도구와 F4 라이브 포토월 뷰 통합 라우팅**
+- [x] **Task 5: F9 호스트 진행 도구와 F4 라이브 포토월 뷰 통합 라우팅**
   - `app/room/[id]/page.tsx`:
     - 파티 상태가 `live`일 때 TV 뷰(`?role=tv`)에 `TvPhotoWall` 자동 렌더링
     - 호스트 뷰(`?role=host`)의 `HostControlPanel` 하단에 `HostPhotoWallControl`을 탭/섹션으로 통합 연동

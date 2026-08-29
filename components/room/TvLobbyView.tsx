@@ -1,8 +1,8 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { Room } from '../../types/room';
 import { useEffect, useState } from 'react';
-
 import { useRoomSession } from '../../hooks/useRoomSession';
+import TvPhotoWall from '../photowall/TvPhotoWall';
 
 interface TvLobbyViewProps {
   room: Room;
@@ -17,11 +17,14 @@ export function TvLobbyView({ room: initialRoom }: TvLobbyViewProps) {
     setJoinUrl(`${window.location.origin}/join/${room.code}`);
   }, [room.code]);
 
+  if (room.status === 'live') {
+    return <TvPhotoWall roomId={room.id} />;
+  }
+
   if (room.status !== 'lobby') {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
         <h1 className="text-5xl font-bold animate-pulse text-center leading-normal">
-          {room.status === 'live' && '파티가 시작되었습니다! 포토월을 즐겨주세요 📸'}
           {room.status === 'award' && '시상식이 진행 중입니다! 🏆'}
           {room.status === 'ended' && '파티가 종료되었습니다. 감사합니다! 🎉'}
         </h1>
