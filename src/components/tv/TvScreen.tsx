@@ -136,18 +136,23 @@ export default function TvScreen({ code }: { code: string }) {
   useEffect(() => {
     if (!roomId) return;
     const refresh = () => void load();
-    const db = browserDb();
-    const room = `id=eq.${roomId}`;
-    const mine = `room_id=eq.${roomId}`;
-    const ch = db
-      .channel(`tv:${roomId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: room }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "participants", filter: mine }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "photos", filter: mine }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "votes", filter: mine }, refresh)
-      .subscribe();
+    let db: any = null;
+    let ch: any = null;
+    try {
+      db = browserDb();
+      const room = `id=eq.${roomId}`;
+      const mine = `room_id=eq.${roomId}`;
+      ch = db
+        .channel(`tv:${roomId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: room }, refresh)
+        .on("postgres_changes", { event: "*", schema: "public", table: "participants", filter: mine }, refresh)
+        .on("postgres_changes", { event: "*", schema: "public", table: "photos", filter: mine }, refresh)
+        .on("postgres_changes", { event: "*", schema: "public", table: "votes", filter: mine }, refresh)
+        .subscribe();
+    } catch {
+      // Supabase realtime unconfigured fallback
+    }
 
-    // 빔에 몇 시간씩 떠 있는 화면이라 소켓이 조용히 끊겨도 복구돼야 한다.
     const onVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
@@ -157,7 +162,7 @@ export default function TvScreen({ code }: { code: string }) {
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       clearInterval(poll);
-      void db.removeChannel(ch);
+      if (db && ch) void db.removeChannel(ch);
     };
   }, [roomId, load]);
 
