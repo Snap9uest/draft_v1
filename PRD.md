@@ -42,7 +42,7 @@
   - 테스트용 사진 추가 버튼 (개발/데모 시뮬레이션용)
   - *Done when*: `HostPhotoWallControl`에서 숨김 버튼 클릭 시 상태가 즉시 토글되는 인터랙션 확인
 
-- [ ] **Task 4: 포토월 상태 관리 훅 (`hooks/usePhotoWall.ts`) 및 실시간 동기화**
+- [x] **Task 4: 포토월 상태 관리 훅 (`hooks/usePhotoWall.ts`) 및 실시간 동기화**
   - 방 ID(`roomId`)별 사진 목록, 숨김 목록, 사회자 멘트 상태 관리
   - 사진 추가(`addPhoto`), 사진 숨김 토글(`toggleHidePhoto`), 멘트 추가(`addReaction`) 액션 제공
   - `BroadcastChannel` 기반 실시간 이벤트 브로드캐스팅 (호스트 폰 ↔ TV 스크린 즉시 동기화)

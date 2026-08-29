@@ -3,24 +3,26 @@
 import React, { useState, useEffect } from 'react';
 import { PhotoItem } from '../../types/photowall';
 import { seedPhotos } from '../../data/seed-photos';
+import { usePhotoWall } from '../../hooks/usePhotoWall';
 import HostReactionBanner from './HostReactionBanner';
 import { presetReactions } from '../../data/preset-reactions';
 
-export default function TvPhotoWall() {
-  const [photos, setPhotos] = useState<PhotoItem[]>(seedPhotos);
+export default function TvPhotoWall({ roomId }: { roomId: string }) {
+  const { photos, reactions } = usePhotoWall(roomId);
   const [visiblePhotos, setVisiblePhotos] = useState<PhotoItem[]>([]);
   const [newPhotoPopup, setNewPhotoPopup] = useState<PhotoItem | null>(null);
 
-  // Mock preset reactions for display
-  const mockReactions = presetReactions.slice(0, 5).map((r, i) => ({
-    ...r,
-    id: `mock-${i}`,
-    createdAt: Date.now()
-  }));
+  // Use actual reactions from hook or fallback to mock for display
+  const displayReactions = reactions.length > 0 
+    ? reactions 
+    : presetReactions.slice(0, 5).map((r, i) => ({
+        ...r,
+        id: `mock-${i}`,
+        createdAt: Date.now()
+      }));
 
   useEffect(() => {
-    // Filter hidden photos and sort by timestamp desc (newest first for standard masonry, though order depends on design)
-    // We'll just show them as they are for masonry.
+    // Filter hidden photos
     setVisiblePhotos(photos.filter(p => !p.isHidden));
   }, [photos]);
 
@@ -39,7 +41,7 @@ export default function TvPhotoWall() {
   return (
     <div className="h-screen w-full bg-neutral-900 text-white flex flex-col overflow-hidden">
       {/* Top Banner */}
-      <HostReactionBanner reactions={mockReactions} />
+      <HostReactionBanner reactions={displayReactions} />
 
       {/* Main Photowall */}
       <div className="flex-1 p-8 overflow-y-auto">

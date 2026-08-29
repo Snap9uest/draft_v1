@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import HostPhotoWallControl from '../../components/photowall/HostPhotoWallControl';
 import { PhotoItem } from '../../types/photowall';
-import { seedPhotos } from '../../data/seed-photos';
+import { usePhotoWall } from '../../hooks/usePhotoWall';
 
 export default function TestPage() {
-  const [photos, setPhotos] = useState<PhotoItem[]>(seedPhotos);
+  const { photos, addPhoto, toggleHidePhoto } = usePhotoWall('test-room');
 
   const handleToggleHide = (id: string) => {
-    setPhotos(prev => 
-      prev.map(p => p.id === id ? { ...p, isHidden: !p.isHidden } : p)
-    );
+    toggleHidePhoto(id);
   };
 
   const handleAddTestPhoto = () => {
@@ -24,7 +22,7 @@ export default function TestPage() {
       timestamp: Date.now(),
       isHidden: false,
     };
-    setPhotos(prev => [newPhoto, ...prev]);
+    addPhoto(newPhoto);
   };
 
   return (
