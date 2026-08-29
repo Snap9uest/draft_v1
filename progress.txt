@@ -16,3 +16,14 @@ Next Task: Task 1 - Next.js + Tailwind CSS 프로젝트 기반 환경 구성
   - TailwindCSS v4 호환성 문제 방지를 위해 v3 버전을 설치 및 적용
   - `package.json`에서 `"type": "commonjs"` 설정 제거로 Turbopack 빌드 에러 해결
 - **다음 태스크**: Task 2 - F4 데이터 타입 정의 및 시드/프리셋 데이터 구축
+
+=== [SWITCH] Switched target to [F9] Host Facilitator ===
+Target: F9 Host 진행 도구 (방 생성, QR/방코드 발급, 파티 생애주기 제어)
+Next Task: Task 1 - F9 방 및 파티 생애주기 데이터 타입 & 상태 모델 정의
+
+=== [2026-08-29] Task 1 Completed ===
+- **작업 내역**:
+  - `types/room.ts` 생성: RoomStatus, TonePreset, Room 인터페이스 정의
+  - `lib/room-storage.ts` 생성: 로컬 스토리지를 활용한 호스트 토큰 관리 유틸리티 추가
+  - `npm run build`로 타입 에러 및 빌드 성공 확인
+- **다음 태스크**: Task 2 - 초간단 방 생성 플로우 UI 구현 (`/create` 또는 메인 랜딩)
