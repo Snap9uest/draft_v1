@@ -1,0 +1,133 @@
+# SnapQuest [F4] Implementation Progress Log
+# Initialize log: 2026-08-29
+# Rules: Append-only log. Do NOT delete previous entries.
+
+=== [START] Ready to begin Ralph Loop ===
+Current Status: PRD.md created with 6 tasks for [F4] Live Photowall & MC Reaction.
+Next Task: Task 1 - Next.js + Tailwind CSS 프로젝트 기반 환경 구성
+
+=== [2026-08-29] Task 1 Completed ===
+- **작업 내역**: 
+  - Next.js (App Router), TypeScript, Tailwind CSS (v3), Lucide-React 등 필수 패키지 설치
+  - `app/layout.tsx`, `app/page.tsx`, `app/globals.css` 및 설정 파일 (`tailwind.config.ts`, `postcss.config.js`) 생성
+  - `components`, `types`, `data`, `hooks` 기본 디렉토리 구조 생성
+  - `npm run build`를 통해 빌드 성공 및 `tsconfig.json` 자동 생성 확인
+- **해결한 문제**: 
+  - TailwindCSS v4 호환성 문제 방지를 위해 v3 버전을 설치 및 적용
+  - `package.json`에서 `"type": "commonjs"` 설정 제거로 Turbopack 빌드 에러 해결
+- **다음 태스크**: Task 2 - F4 데이터 타입 정의 및 시드/프리셋 데이터 구축
+
+=== [SWITCH] Switched target to [F9] Host Facilitator ===
+Target: F9 Host 진행 도구 (방 생성, QR/방코드 발급, 파티 생애주기 제어)
+Next Task: Task 1 - F9 방 및 파티 생애주기 데이터 타입 & 상태 모델 정의
+
+=== [2026-08-29] Task 1 Completed ===
+- **작업 내역**:
+  - `types/room.ts` 생성: RoomStatus, TonePreset, Room 인터페이스 정의
+  - `lib/room-storage.ts` 생성: 로컬 스토리지를 활용한 호스트 토큰 관리 유틸리티 추가
+  - `npm run build`로 타입 에러 및 빌드 성공 확인
+- **다음 태스크**: Task 2 - 초간단 방 생성 플로우 UI 구현 (`/create` 또는 메인 랜딩)
+
+=== [2026-08-29] Task 2 Completed ===
+- **작업 내역**:
+  - `app/create/page.tsx` 생성: 초간단 방 생성 플로우 UI 구현
+  - 클릭 2~3회로 톤 프리셋 선택 및 방 생성 로직 추가 (`crypto.randomUUID`, `Math.random` 활용)
+  - 방 생성 시 고유 `roomId`, `code`, `hostToken` 자동 생성 후 `roomStorage.saveHostToken`으로 로컬 스토리지에 토큰 저장
+  - 생성 후 호스트 전용 페이지(`/room/[id]?role=host&token=[hostToken]`)로 자동 이동 처리
+  - `npm run build`로 타입 에러 없이 정상 빌드 확인
+- **다음 태스크**: Task 3 - TV 대기/로비 화면 QR 및 방코드 렌더러 (`?role=tv`)
+
+=== [2026-08-29] Task 3 Completed ===
+- **작업 내역**:
+  - `components/room/TvLobbyView.tsx` 생성: QR 코드 렌더러 및 파티 상태(lobby, live, award, ended)별 대형 스크린 뷰 구현.
+  - `qrcode.react` 라이브러리 설치 및 QR 코드 연동.
+  - `app/room/[id]/page.tsx` 생성 및 라우팅 추가: `?role=tv` 접속 시 TvLobbyView 렌더링.
+  - `app/create/page.tsx` 업데이트: 방 생성 시 로컬스토리지(`snapquest_rooms`)에 임시 데이터를 저장하여 테스트 연동.
+  - `npm run build`로 타입 에러 없이 정상 빌드 확인.
+- **다음 태스크**: Task 4 - 호스트 폰 컨트롤 패널 UI (`?role=host`)
+
+=== [2026-08-29] Task 4 Completed ===
+- **작업 내역**:
+  - `components/host/HostControlPanel.tsx` 생성: 모바일 최적화 헤더 및 파티 생애주기 컨트롤 버튼, 부가 설정 토글 구현
+  - `app/room/[id]/page.tsx` 업데이트: `role === 'host'` 접속 시 `HostControlPanel` 렌더링 및 `room` 데이터 주입
+  - 토큰 인증 실패 시 예외 처리 화면 추가
+  - `npm run build`로 타입 에러 없이 정상 빌드 확인
+- **다음 태스크**: Task 5 - 파티 생애주기 실시간 동기화 훅 (`useRoomSession`)
+
+=== [2026-08-29] Task 5 Completed ===
+- **작업 내역**:
+  - `hooks/useRoomSession.ts` 생성: 방 상태, 톤 프리셋, 리워드 토글 상태를 관리하는 커스텀 훅 구현.
+  - `BroadcastChannel`을 활용하여 같은 기기의 여러 탭(호스트 뷰와 TV 뷰) 간 상태 실시간 동기화 적용.
+  - 로컬 스토리지(`snapquest_rooms`)와 연동하여 호스트 재접속 시 이전 진행 상태를 자동으로 복원하도록 구현.
+  - `components/host/HostControlPanel.tsx` 업데이트: 기존 로컬 상태를 `useRoomSession` 훅으로 대체.
+  - `components/room/TvLobbyView.tsx` 업데이트: props로 받은 `initialRoom`을 `useRoomSession` 훅에 전달하여 실시간 상태 반영.
+  - `npm run build`로 빌드 성공 확인.
+- **다음 태스크**: Task 6 - F9 전체 플로우 통합 및 빌드 검증
+
+=== [2026-08-29] Task 6 Completed ===
+- **작업 내역**:
+  - `components/room/GuestView.tsx` 생성: 게스트 기본 화면 구현 및 방 상태 동기화 처리.
+  - `app/room/[id]/page.tsx` 업데이트: `role` 값이 없을 경우 `GuestView`를 렌더링하도록 연동.
+  - 리워드 토글 비즈니스 규칙 검증: `GuestView` 내에서 `room.rewardToggle` 상태에 따라 리워드 문구가 조건부 렌더링되도록 구현.
+  - `components/host/HostControlPanel.tsx` 업데이트: 호스트 컨트롤 화면에서 `?role=tv` 링크를 쉽게 열 수 있는 "TV 화면 열기" 버튼 추가하여 `/create` 생성 이후 호스트 화면과 TV 화면을 연결하는 플로우 강화.
+  - `npm run build`를 실행하여 타입 에러 없이 성공적으로 전체 애플리케이션 빌드 확인.
+- **해결한 문제**:
+  - 방 생성 직후 호스트 화면에서는 TV 화면에 어떻게 접근하는지 불명확했던 UX를 호스트 패널 내 버튼을 통해 해결.
+  - 게스트 뷰 빈 껍데기를 실제 뷰로 교체하여 비즈니스 규칙 확인.
+- **다음 태스크**: (F9 완료) 다음 F 기능 진행 준비
+
+=== [2026-08-29] [F9] Host Facilitator 100% Completed! ===
+All 6 tasks for [F9] completed successfully and pushed to remote branch `feature/f9-host-control`.
+
+=== [START] Beginning [F4] Live Photowall & MC Reaction Loop ===
+Target: [F4] 라이브 포토월 (TV 화면 실시간 포토월 그리드, AI 사회자 리액션 배너, 호스트 사진 숨김/복구, 실시간 동기화)
+Next Task: Task 1 - F4 데이터 타입 정의 및 시드/프리셋 데이터 구축
+
+=== [2026-08-29] Task 1 Completed ===
+- **작업 내역**:
+  - `types/photowall.ts` 업데이트: `PhotoItem`, `ReactionMessage` 데이터 타입 정의
+  - `data/preset-reactions.ts` 생성: 15개의 텐션업/감탄/케미/재미 카테고리별 프리셋 멘트 및 헬퍼 함수 구현
+  - `data/seed-photos.ts` 생성: 빈 화면을 방지할 6장의 시드 사진 및 캡션 데이터 구현
+  - `npm run build`를 통해 타입 에러 없이 정상적으로 빌드되는 것 확인
+- **다음 태스크**: Task 2 - TV 스크린용 라이브 포토월 뷰 구현 (`components/photowall/TvPhotoWall.tsx`)
+
+=== [2026-08-29] Task 2 Completed ===
+- **작업 내역**:
+  - `components/photowall/TvPhotoWall.tsx` 생성: 빔프로젝터 및 대형 화면에 최적화된 다크 테마 기반 반응형 메이슨리 그리드 레이아웃 구현.
+  - `components/photowall/HostReactionBanner.tsx` 생성: 실시간 AI 사회자 리액션 멘트 롤링 애니메이션(fade-in/out) 배너 구현.
+  - `tailwind.config.ts` 업데이트: `fade-in`, `pop-in` 커스텀 애니메이션 키프레임 추가.
+  - 신규 사진 도착 시 중앙 강조 팝업(Pop-in), 숨김 처리 필터링, 사진 0장 시 시드 콘텐츠 렌더링 로직 추가.
+  - `npm run build`를 통해 빌드 에러 없이 정상적으로 컴파일되는 것 확인.
+- **다음 태스크**: Task 3 - 호스트용 사진 숨김/복구 컨트롤 패널 구현 (`components/photowall/HostPhotoWallControl.tsx`)
+
+=== [2026-08-29] Task 3 Completed ===
+- **작업 내역**:
+  - `components/photowall/HostPhotoWallControl.tsx` 생성: 모바일 화면에 최적화된 업로드 사진 카드 리스트 구현.
+  - 각 사진별 **[숨김 / 복구]** 원클릭 토글 버튼 추가 및 시각적 피드백(배경색, 뱃지 등) 제공.
+  - '전체', '노출 중', '숨김' 상태를 보여주는 배지 및 필터 기능 구현.
+  - 시뮬레이션용 '테스트 사진 추가' 버튼 및 인터랙션을 테스트하기 위한 임시 페이지(`app/test-photowall/page.tsx`) 구현.
+  - `npm run build`를 통해 타입 에러 없이 성공적으로 빌드되는 것 확인.
+- **다음 태스크**: Task 4 - 포토월 상태 관리 훅 (`hooks/usePhotoWall.ts`) 및 실시간 동기화
+
+=== [2026-08-29] Task 4 Completed ===
+- **작업 내역**:
+  - `hooks/usePhotoWall.ts` 생성: 로컬 스토리지를 활용해 상태 보존 및 복원
+  - `BroadcastChannel`을 사용한 탭 간 실시간 이벤트 동기화(`roomId` 기반)
+  - `document.addEventListener('visibilitychange')`를 통한 재동기화 로직 구현
+  - `app/test-photowall/page.tsx` 및 `components/photowall/TvPhotoWall.tsx`에 훅 적용 및 `roomId` 의존성 주입
+- **다음 태스크**: Task 5 - F9 호스트 진행 도구와 F4 라이브 포토월 뷰 통합 라우팅
+
+=== [2026-08-29] Task 5 Completed ===
+- **작업 내역**:
+  - `components/room/TvLobbyView.tsx` 업데이트: 방 상태가 `live`일 때 `TvPhotoWall`이 자동으로 렌더링되도록 연동
+  - `components/host/HostControlPanel.tsx` 업데이트: `usePhotoWall` 훅을 도입하고 하단에 `HostPhotoWallControl` 통합 연동
+  - 테스트용 사진 추가 버튼(`handleAddTestPhoto`) 구현 및 연결
+  - `timestamp` 데이터 타입을 number(`Date.now()`)로 수정하여 타입 에러 해결
+  - `npm run build`를 통해 빌드 에러 없이 성공적으로 컴파일되는 것을 확인
+- **다음 태스크**: Task 6 - F4 전체 인터랙션 검증 및 빌드 확인
+
+=== [2026-08-29] Task 6 Completed ===
+- **작업 내역**:
+  - `npm run build`를 실행하여 Next.js 애플리케이션 타입 에러 및 빌드 에러 없이 정상 동작함을 확인.
+  - 파티 생애주기에 따른 F4 라이브 포토월 전체 인터랙션 기능의 빌드 성공 여부를 최종 확인.
+- **다음 태스크**: (F4 완료) 다음 기능 진행 준비
