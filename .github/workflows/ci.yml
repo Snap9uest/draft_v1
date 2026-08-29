@@ -53,3 +53,85 @@ jobs:
             echo "::error::A credential appears to be committed. Move it to .env.local and rotate the key."
             exit 1
           fi
+
+  # The suite talks to a real Supabase project and a real Gemini key on purpose
+  # (see e2e/README.md). A fork PR cannot read repository secrets, so instead of
+  # failing on everyone else's contributions this job checks for the keys first
+  # and no-ops loudly when they are absent.
+  e2e:
+    needs: check
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      # `secrets` is not readable from a job-level `if:`, so the gate is a step
+      # whose output every later step keys off. Names only — never the values.
+      - name: Check for E2E secrets
+        id: gate
+        run: |
+          missing=
+          for v in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY \
+                   SUPABASE_SERVICE_ROLE_KEY GEMINI_API_KEY; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=E2E skipped::No E2E credentials on this run (missing:$missing ). Expected on fork PRs; the suite needs a real Supabase project and Gemini key."
+            echo "### E2E skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "Missing repository secrets:\`$missing\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "Normal for a pull request from a fork. Run \`npm run test:e2e\` locally — see \`e2e/README.md\`." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "### E2E running against the live Supabase project" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.gate.outputs.run == 'true'
+
+      # Browser binaries are ~400MB and change only when @playwright/test does,
+      # which package-lock.json pins. The OS libraries they link against live
+      # outside this path, so they get reinstalled either way.
+      - uses: actions/cache@v4
+        if: steps.gate.outputs.run == 'true'
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # chromium + webkit only: playwright.config.ts runs "chromium" and
+      # "mobile-safari" (iPhone 14 = webkit). Firefox would be dead weight.
+      - name: Install Playwright browsers
+        if: steps.gate.outputs.run == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Install Playwright system dependencies
+        if: steps.gate.outputs.run == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium webkit
+
+      # No E2E_BASE_URL, so playwright.config.ts starts `npm run dev` itself —
+      # the same server the suite was written against. It inherits the job env
+      # above, which is how the app routes reach Supabase and Gemini.
+      - name: Run E2E
+        if: steps.gate.outputs.run == 'true'
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure() && steps.gate.outputs.run == 'true'
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -7,13 +7,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { browserDb } from "@/lib/db/client";
 import { getRoomPhotos, getRoomWithParticipants } from "@/lib/db/queries";
 import type { BoardCell, Participant, Photo, Room } from "@/lib/db/types";
+import { readFourcut } from "@/lib/fourcut";
+import { getNotes, type Note } from "@/lib/notes";
+import FourcutStage from "./FourcutStage";
+import NoteWall from "./NoteWall";
 
 type Data = {
   room: Room;
   participants: Participant[];
   photos: Photo[];
   votes: Record<string, number>;
+  notes: Note[];
 };
+
+/** 네컷이 끝나고도 합동 프레임을 이만큼 더 띄운다 — 다들 볼 시간. */
+const FRAME_HOLD_MS = 45_000;
 
 const MC_INTROS = [
   "{n}님 등장! 오늘 판이 좀 커지는데요 ✨",
@@ -55,6 +63,15 @@ const SAMPLE_MISSIONS = [
   "다같이 하트 포즈 ❤️",
 ];
 
+/** 로비 자리 표시용 점토 색. 문자열 리터럴이어야 Tailwind 가 잡는다. */
+const CLAY = [
+  "bg-brand-peach",
+  "bg-brand-lavender",
+  "bg-brand-ochre",
+  "bg-brand-teal",
+  "bg-brand-blush",
+];
+
 function hash(s: string): number {
   let h = 0;
   for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -81,6 +98,16 @@ async function getVotes(roomId: string): Promise<Record<string, number>> {
   }
 }
 
+/** 기준 시각. 렌더 중 Date.now() 는 순수하지 않아 상태로 들고 있는다. */
+function useNow(ms: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(t);
+  }, [ms]);
+  return now;
+}
+
 /** 연출용 카운터. 4초마다 1씩. */
 function useTick(ms: number): number {
   const [n, setN] = useState(0);
@@ -99,6 +126,7 @@ export default function TvScreen({ code }: { code: string }) {
   const freshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loaded = useRef(false);
   const tick = useTick(5000);
+  const nowMs = useNow(5000);
 
   const load = useCallback(async () => {
     const res = await getRoomWithParticipants(code);
@@ -107,9 +135,10 @@ export default function TvScreen({ code }: { code: string }) {
       if (!loaded.current) setMissing(true);
       return;
     }
-    const [photos, votes] = await Promise.all([
+    const [photos, votes, notes] = await Promise.all([
       getRoomPhotos(res.room.id),
       getVotes(res.room.id),
+      getNotes(res.room),
     ]);
 
     const ids = photos.map((p) => p.id);
@@ -125,7 +154,7 @@ export default function TvScreen({ code }: { code: string }) {
     loaded.current = true;
 
     setMissing(false);
-    setData({ room: res.room, participants: res.participants, photos, votes });
+    setData({ room: res.room, participants: res.participants, photos, votes, notes });
   }, [code]);
 
   useEffect(() => {
@@ -174,7 +203,7 @@ export default function TvScreen({ code }: { code: string }) {
     return (
       <Shell code={code}>
         <Center>
-          <p className="text-[clamp(1.5rem,3vw,3rem)] text-white/70">
+          <p className="text-[clamp(1.5rem,3vw,3rem)] text-stage-ink-muted">
             {missing ? `${code} 방을 찾을 수 없어요` : "파티 여는 중이에요…"}
           </p>
         </Center>
@@ -182,12 +211,29 @@ export default function TvScreen({ code }: { code: string }) {
     );
   }
 
-  const { room, participants, photos, votes } = data;
-  const view =
-    room.status === "lobby" ? (
+  const { room, participants, photos, votes, notes } = data;
+
+  // 네컷 타임은 다른 무엇보다 앞선다 — 33초 동안 화면 전체를 쓴다.
+  const fourcut = readFourcut(room.state);
+  // 포토월과 방명록을 20초씩 번갈아 띄운다(tick 은 5초).
+  const notesTurn = notes.length > 0 && Math.floor(tick / 4) % 2 === 1;
+
+  const view = fourcut &&
+    nowMs < Date.parse(fourcut.deadline) + FRAME_HOLD_MS ? (
+      <FourcutStage
+        session={fourcut}
+        roomId={room.id}
+        photos={photos}
+        participants={participants}
+      />
+    ) : room.status === "lobby" ? (
       <Lobby participants={participants} tick={tick} />
     ) : room.status === "live" ? (
-      <PhotoWall participants={participants} photos={photos} fresh={fresh} tick={tick} />
+      notesTurn ? (
+        <NoteWall notes={notes} participants={participants} />
+      ) : (
+        <PhotoWall participants={participants} photos={photos} fresh={fresh} tick={tick} />
+      )
     ) : (
       <Award
         participants={participants}
@@ -219,10 +265,10 @@ function Shell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen flex-col bg-[#0b0a14] text-white">
+    <main className="flex min-h-screen flex-col bg-stage text-stage-ink">
       <style>{`
         @keyframes sq-pop { from { transform: scale(.86); opacity: 0 } to { transform: none; opacity: 1 } }
-        @keyframes sq-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(250,204,21,0) } 50% { box-shadow: 0 0 0 14px rgba(250,204,21,.35) } }
+        @keyframes sq-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(254,76,138,0) } 50% { box-shadow: 0 0 0 14px rgba(254,76,138,.45) } }
         @keyframes sq-fade { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
         @keyframes sq-breathe { 0%, 100% { opacity: .3 } 50% { opacity: .8 } }
         .sq-pop { animation: sq-pop .5s ease-out both }
@@ -233,15 +279,22 @@ function Shell({
       `}</style>
 
       <header className="flex items-baseline justify-between gap-6 px-[3vw] pt-[2.5vh] pb-[1.5vh]">
-        <div className="flex items-baseline gap-[1.5vw]">
-          <span className="text-[clamp(1rem,1.4vw,1.75rem)] font-semibold tracking-[0.35em] text-fuchsia-300">
+        <div className="flex items-baseline gap-[2vw]">
+          <span
+            className="font-pixel text-[clamp(.7rem,1vw,1.35rem)] text-brand-pink-hot"
+            translate="no"
+          >
             SNAPQUEST
           </span>
-          <span className="text-[clamp(2.5rem,5vw,6rem)] font-black leading-none tracking-[0.1em] tabular-nums">
+          {/* 방 코드는 이 화면에서 제일 크게. 픽셀 폰트라 leading 을 직접 눌러준다. */}
+          <span
+            className="font-pixel text-[clamp(2rem,4.4vw,5rem)] text-stage-ink"
+            style={{ lineHeight: 1 }}
+          >
             {code}
           </span>
         </div>
-        <p className="text-[clamp(1rem,1.6vw,2rem)] text-white/60">
+        <p className="text-[clamp(1rem,1.6vw,2rem)] text-stage-ink-muted">
           {count !== undefined ? `참가자 ${count}명` : ""}
           {photos !== undefined ? ` · 사진 ${photos}장` : ""}
         </p>
@@ -266,13 +319,13 @@ function Avatar({ p, size }: { p: Participant; size: string }) {
     <img
       src={p.avatar_url}
       alt={label}
-      className={`${size} rounded-[22%] bg-white/10 object-cover`}
+      className={`${size} rounded-[28%] bg-stage-card object-cover`}
     />
   ) : (
     <div
       role="img"
       aria-label={label}
-      className={`${size} flex items-center justify-center rounded-[22%] bg-white/10 text-[2vw] font-bold`}
+      className={`${size} flex items-center justify-center rounded-[28%] bg-stage-card text-[2vw] font-bold text-stage-ink`}
     >
       {p.nickname.slice(0, 1)}
     </div>
@@ -284,7 +337,7 @@ function McBanner({ text }: { text: string }) {
   return (
     <p
       key={text}
-      className="sq-fade mt-[2vh] rounded-3xl bg-gradient-to-r from-fuchsia-600/80 to-violet-600/80 px-[2.5vw] py-[2vh] text-center text-[clamp(1.5rem,2.6vw,3.25rem)] font-bold leading-snug"
+      className="sq-fade mt-[2vh] rounded-[2.5rem] bg-brand-pink-hot px-[2.5vw] py-[2vh] text-center text-[clamp(1.5rem,2.8vw,3.5rem)] font-bold leading-snug text-ink shadow-clay-lg"
       aria-live="polite"
     >
       {text}
@@ -299,20 +352,20 @@ function Lobby({ participants, tick }: { participants: Participant[]; tick: numb
     return (
       <>
         <Center>
-          <p className="text-[clamp(2rem,4vw,4.5rem)] font-black">
+          <p className="text-[clamp(2.5rem,5vw,5.5rem)] font-black tracking-tight">
             제일 먼저 들어올 사람?
           </p>
           <div className="flex gap-[2vw]">
             {SAMPLE_MISSIONS.slice(0, 5).map((m, i) => (
               <div
                 key={m}
-                className="sq-breathe size-[7vw] rounded-[22%] bg-white/10"
+                className={`sq-breathe size-[7vw] rounded-[28%] ${CLAY[i % CLAY.length]}`}
                 style={{ animationDelay: `${i * 0.25}s` }}
               />
             ))}
           </div>
-          <p className="text-[clamp(1.25rem,2vw,2.5rem)] text-white/60">
-            호스트 폰의 QR을 찍거나, 위에 뜬 코드 여섯 자를 넣으면 끝 — 설치도 로그인도 없어요
+          <p className="text-[clamp(1.25rem,2vw,2.5rem)] text-stage-ink-muted">
+            호스트 폰의 QR을 찍거나, 위에 뜬 코드 여섯 자를 넣으면 끝. 설치도 로그인도 없어요
           </p>
         </Center>
         <McBanner text="폰 열고 QR 한 번이면 바로 파티예요 🎉" />
@@ -322,7 +375,7 @@ function Lobby({ participants, tick }: { participants: Participant[]; tick: numb
 
   const spotlight = participants[tick % participants.length];
   const intro = spotlight.intro
-    ? `${spotlight.nickname} — “${spotlight.intro}”`
+    ? `${spotlight.nickname}, “${spotlight.intro}”`
     : pick(MC_INTROS, spotlight.id, spotlight.nickname);
   // 아직 서넛뿐이면 한 번 걸러 한 번은 "더 들어오세요"를 띄운다.
   const line =
@@ -337,13 +390,17 @@ function Lobby({ participants, tick }: { participants: Participant[]; tick: numb
           <div
             key={p.id}
             className={`sq-pop flex flex-col items-center gap-[1vh] rounded-3xl p-[1vw] text-center ${
-              p.id === spotlight.id ? "bg-white/10 ring-4 ring-fuchsia-400" : ""
+              p.id === spotlight.id
+                ? "bg-stage-card shadow-clay-lg ring-4 ring-brand-pink-hot"
+                : ""
             }`}
           >
             <Avatar p={p} size="size-[clamp(80px,9vw,190px)]" />
-            <p className="text-[clamp(1rem,1.5vw,1.9rem)] font-bold">{p.nickname}</p>
+            <p className="text-[clamp(1.1rem,1.7vw,2.2rem)] font-bold">{p.nickname}</p>
             {p.is_bot && (
-              <span className="text-[clamp(.7rem,.9vw,1.1rem)] text-white/40">봇 참가자</span>
+              <span className="text-[clamp(.8rem,1vw,1.2rem)] text-stage-ink-muted">
+                봇 참가자
+              </span>
             )}
           </div>
         ))}
@@ -383,27 +440,28 @@ function PhotoWall({
         {shown.map((photo) => {
           const isNew = fresh.includes(photo.id);
           return (
+            /* 폴라로이드: 흰 테두리 + 아래 캡션 단. 어두운 무대 위에서 사진만 뜬다. */
             <figure
               key={photo.id}
-              className={`relative overflow-hidden rounded-3xl bg-white/5 ${
+              className={`relative flex min-h-0 flex-col rounded-2xl bg-card-plain p-[0.55vw] pb-0 shadow-clay-lg ${
                 isNew ? "sq-new" : "sq-pop"
               } ${photo.id === newest?.id ? "col-span-2 row-span-2" : ""}`}
             >
               <img
                 src={photo.url}
                 alt={photo.caption || `${nameOf(photo.owner_id)}님의 인증 사진`}
-                className="size-full object-cover"
+                className="min-h-0 w-full flex-1 rounded-xl object-cover"
               />
-              <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-[1.2vw] pt-[6vh] pb-[1.2vh]">
-                <p className="text-[clamp(.9rem,1.3vw,1.8rem)] font-bold leading-snug">
+              <figcaption className="px-[0.5vw] py-[1.1vh]">
+                <p className="line-clamp-2 text-[clamp(.9rem,1.3vw,1.8rem)] font-bold leading-snug text-ink">
                   {photo.caption || "멋진 순간 📸"}
                 </p>
-                <p className="text-[clamp(.75rem,1vw,1.3rem)] text-white/70">
+                <p className="truncate text-[clamp(.75rem,1vw,1.3rem)] text-ink-muted">
                   {nameOf(photo.owner_id)}
                 </p>
               </figcaption>
               {isNew && (
-                <span className="absolute left-[1vw] top-[1vh] rounded-full bg-yellow-400 px-[1vw] py-[0.6vh] text-[clamp(.75rem,1vw,1.3rem)] font-black text-black">
+                <span className="absolute left-[1.3vw] top-[1.4vh] rounded-full bg-brand-pink-hot px-[1vw] py-[0.6vh] text-[clamp(.75rem,1vw,1.3rem)] font-black text-ink">
                   방금 도착
                 </span>
               )}
@@ -426,12 +484,13 @@ function WaitingWall({
   return (
     <>
       <Center>
-        <div className="flex max-w-2xl flex-col items-center gap-6 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-          <span className="text-6xl animate-bounce">📸</span>
-          <h2 className="text-3xl font-extrabold text-white">
+        <div className="relative flex max-w-[70vw] flex-col items-center gap-[2vh] overflow-hidden rounded-[2.5rem] bg-stage-card p-[3vw] text-center shadow-clay-lg">
+          <span aria-hidden className="absolute inset-x-0 top-0 h-[1vh] bg-brand-peach" />
+          <span className="animate-bounce text-[clamp(3rem,6vw,7rem)]">📸</span>
+          <h2 className="text-[clamp(2rem,3.6vw,4.5rem)] font-black leading-tight tracking-tight text-stage-ink">
             먼저 올린 사진이 여기 제일 크게 떠요
           </h2>
-          <p className="text-xl leading-relaxed text-white/70">
+          <p className="text-[clamp(1.25rem,2vw,2.5rem)] leading-relaxed text-stage-ink-muted">
             폰에 깔린 3×3 미션 중에 제일 쉬운 걸로 하나 찍어보세요.
             <br />
             올리자마자 이 화면에 떠요 ✨
@@ -471,10 +530,10 @@ function Award({
     return (
       <>
         <Center>
-          <p className="sq-breathe text-[clamp(2rem,4.5vw,5rem)] font-black">
+          <p className="sq-breathe text-[clamp(2.5rem,5vw,6rem)] font-black tracking-tight">
             {ended ? "파티가 끝났어요 🎊" : "AI가 오늘의 칭호를 고르는 중이에요"}
           </p>
-          <p className="text-[clamp(1.25rem,2vw,2.5rem)] text-white/60">
+          <p className="text-[clamp(1.25rem,2vw,2.5rem)] text-stage-ink-muted">
             오늘 올라온 사진을 전부 다시 보고, 한 명씩 칭호를 붙이는 중이에요
           </p>
         </Center>
@@ -489,27 +548,30 @@ function Award({
     <div className="flex min-h-0 flex-1 flex-col gap-[2vh]">
       <section
         key={star.id}
-        className="sq-fade flex items-center gap-[3vw] rounded-[2.5rem] bg-gradient-to-r from-amber-500/25 to-fuchsia-600/25 p-[2vw]"
+        className="sq-fade relative flex items-center gap-[3vw] overflow-hidden rounded-[2.5rem] bg-stage-card p-[2vw] shadow-clay-lg"
         aria-live="polite"
       >
+        <span aria-hidden className="absolute inset-x-0 top-0 h-[1vh] bg-brand-ochre" />
         <Avatar p={star} size="size-[clamp(120px,14vw,280px)]" />
         <div className="min-w-0">
-          <p className="text-[clamp(1.1rem,1.8vw,2.2rem)] text-white/60">
+          <p className="text-[clamp(1.1rem,1.8vw,2.2rem)] text-stage-ink-muted">
             {ended ? "오늘의 칭호" : "방금 정해진 칭호 🥁"}
           </p>
-          <p className="text-[clamp(2.2rem,5vw,6rem)] font-black leading-tight text-amber-300">
+          <p className="text-[clamp(2.4rem,5.5vw,6.5rem)] font-black leading-tight tracking-tight text-brand-ochre">
             {star.title}
           </p>
           <p className="text-[clamp(1.4rem,2.4vw,3rem)] font-bold">{star.nickname}</p>
           {star.title_basis && (
-            <p className="text-[clamp(1rem,1.6vw,2rem)] text-white/70">{star.title_basis}</p>
+            <p className="text-[clamp(1rem,1.6vw,2rem)] text-stage-ink-muted">
+              {star.title_basis}
+            </p>
           )}
         </div>
       </section>
 
       <div className="grid min-h-0 flex-1 grid-cols-[1fr_1.1fr] gap-[2vw]">
         <section className="min-h-0 overflow-hidden">
-          <h2 className="mb-[1vh] text-[clamp(1.1rem,1.6vw,2rem)] text-white/50">
+          <h2 className="mb-[1vh] text-[clamp(1.1rem,1.6vw,2rem)] text-stage-ink-muted">
             모두의 칭호
           </h2>
           <ul className="grid grid-cols-2 gap-[1vw]">
@@ -517,15 +579,15 @@ function Award({
               <li
                 key={p.id}
                 className={`flex items-center gap-[1vw] rounded-2xl px-[1vw] py-[1vh] ${
-                  p.id === star.id ? "bg-white/10" : ""
+                  p.id === star.id ? "bg-stage-card" : ""
                 }`}
               >
                 <Avatar p={p} size="size-[clamp(44px,4vw,84px)]" />
                 <div className="min-w-0">
-                  <p className="truncate text-[clamp(.95rem,1.3vw,1.7rem)] font-bold text-amber-200">
+                  <p className="truncate text-[clamp(1rem,1.4vw,1.9rem)] font-bold text-brand-ochre">
                     {p.title}
                   </p>
-                  <p className="truncate text-[clamp(.8rem,1.1vw,1.4rem)] text-white/60">
+                  <p className="truncate text-[clamp(.85rem,1.2vw,1.5rem)] text-stage-ink-muted">
                     {p.nickname}
                   </p>
                 </div>
@@ -535,7 +597,7 @@ function Award({
         </section>
 
         <section className="min-h-0">
-          <h2 className="mb-[1vh] text-[clamp(1.1rem,1.6vw,2rem)] text-white/50">
+          <h2 className="mb-[1vh] text-[clamp(1.1rem,1.6vw,2rem)] text-stage-ink-muted">
             베스트샷 투표 · 폰에서 함께 투표해요
           </h2>
           {candidates.length ? (
@@ -547,15 +609,15 @@ function Award({
                     <img
                       src={photo.url}
                       alt={photo.caption || `${nameOf(photo.owner_id)}님의 사진`}
-                      className="size-[clamp(56px,6vw,120px)] shrink-0 rounded-2xl object-cover"
+                      className="size-[clamp(56px,6vw,120px)] shrink-0 rounded-xl bg-card-plain object-cover p-[0.3vw] ring-1 ring-stage-card"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[clamp(.95rem,1.4vw,1.8rem)] font-bold">
+                      <p className="truncate text-[clamp(1rem,1.5vw,1.9rem)] font-bold">
                         {photo.caption || nameOf(photo.owner_id)}
                       </p>
-                      <div className="mt-[0.6vh] h-[1.6vh] overflow-hidden rounded-full bg-white/10">
+                      <div className="mt-[0.6vh] h-[1.6vh] overflow-hidden rounded-full bg-stage-card">
                         <div
-                          className="h-full rounded-full bg-amber-400 transition-[width] duration-700"
+                          className="h-full rounded-full bg-brand-pink-hot transition-[width] duration-700"
                           style={{ width: `${Math.round((n / top) * 100)}%` }}
                         />
                       </div>
@@ -568,7 +630,7 @@ function Award({
               })}
             </ul>
           ) : (
-            <p className="sq-breathe text-[clamp(1.1rem,1.8vw,2.2rem)] text-white/60">
+            <p className="sq-breathe text-[clamp(1.1rem,1.8vw,2.2rem)] text-stage-ink-muted">
               후보 사진을 모으는 중…
             </p>
           )}

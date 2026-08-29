@@ -1,27 +1,93 @@
 @import "tailwindcss";
 
-/* 빔프로젝터·야간 파티가 기본 환경이라 다크 고정. prefers-color-scheme 분기 없음. */
-:root {
-  color-scheme: dark;
-  --background: #0a0910;
-  --foreground: #f5f3ff;
+/*
+ * Claymation — 크림 캔버스 위 말랑한 점토 UI. 라이트 고정.
+ * prefers-color-scheme 분기 없음. 어두운 화면이 필요한 TV(빔프로젝터)는
+ * 아래 stage-* 토큰을 쓴다.
+ */
+
+@theme {
+  /* ── 표면: 크림 캔버스 ───────────────────────────────────── */
+  --color-surface: #fef9ef; /* 페이지 바닥 */
+  --color-surface-soft: #faf5e8; /* 한 단 들어간 영역 */
+  --color-surface-variant: #e7e2d8; /* 하단 탭바·프레임 트레이 */
+  --color-surface-dim: #dedad0; /* 잠긴/비활성 타일 */
+  --color-card: #f5f0e0; /* 기본 카드 */
+  --color-card-plain: #ffffff; /* 입력창처럼 카드 위에 또 올리는 면 */
+
+  /* ── 잉크 ────────────────────────────────────────────────── */
+  --color-ink: #1d1c16; /* 제목·본문 강조 (크림 위 16.6:1) */
+  --color-ink-body: #3a3a3a; /* 본문 (10.8:1) */
+  --color-ink-muted: #6a6a6a; /* 보조 텍스트 (크림 5.2:1 / 카드 4.7:1)
+                                 — 접근성 하한선. 이보다 옅은 회색 금지 */
+  --color-hairline: #e5e5e5; /* 1px 구분선 */
+
+  /* ── 액션 ────────────────────────────────────────────────── */
+  --color-primary: #000000; /* 검정 알약 버튼 */
+  --color-on-primary: #ffffff;
+  --color-secondary: #b90b59; /* 진한 핑크 (크림 위 6.2:1, 흰 글자 6.5:1) */
+  --color-on-secondary: #ffffff;
+
+  /* ── 브랜드 점토 팔레트 ──────────────────────────────────── */
+  --color-brand-pink: #b90b59; /* 텍스트로 써도 되는 유일한 핑크 */
+  --color-brand-pink-hot: #fe4c8a; /* 활성 탭 알약. 반드시 어두운 글자와 (검정 6.6:1, 흰 글자 3.2:1로 불합격) */
+  --color-brand-blush: #ffb1c3;
+  --color-brand-lavender: #b8a4ed;
+  --color-brand-peach: #ffb084;
+  --color-brand-ochre: #e8b94a;
+  --color-brand-teal: #c7e9e8;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+
+  /* ── TV(빔프로젝터) 전용 어두운 변형 ─────────────────────── */
+  --color-stage: #1d1c16;
+  --color-stage-card: #32302a;
+  --color-stage-ink: #f5f0e6;
+  --color-stage-ink-muted: #b8b3a6; /* stage 위 8.3:1 */
+
+  /* ── 레거시 별칭 ─────────────────────────────────────────
+   * 다크 테마 시절 이름. 아직 안 칠한 화면이 참조하고 있어서 남긴다.
+   * 화면을 칠하면서 brand-pink / brand-pink-hot 으로 갈아끼우고 지울 것. */
+  --color-accent: #b90b59;
+  --color-pop: #fe4c8a;
+
+  /* ── 타이포 ──────────────────────────────────────────────── */
+  /* Inter 에 한글 글리프가 없어서 뒤 스택으로 자동 폴백된다. */
+  --font-sans:
+    var(--font-body), -apple-system, BlinkMacSystemFont, "Pretendard Variable",
+    Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR",
+    system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── 그림자 ──────────────────────────────────────────────
+   * 점토가 크림 바닥에 살짝 눌린 정도. 이보다 세게 쓰지 말 것. */
+  --shadow-clay:
+    0 1px 2px rgb(29 28 22 / 0.04), 0 8px 24px -12px rgb(29 28 22 / 0.14);
+  --shadow-clay-lg:
+    0 2px 4px rgb(29 28 22 / 0.05), 0 18px 40px -18px rgb(29 28 22 / 0.2);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-accent: #c9ff4d;
-  --color-pop: #ff3d8b;
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard,
-    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+/*
+ * 픽셀 폰트. 로고와 영문 라벨 전용 — 한글 본문에 쓰지 말 것.
+ * Press Start 2P 에 한글이 없어 섞여 들어와도 글리프 단위로
+ * 본문 스택에 폴백되지만, 자간·크기가 깨지므로 영문에만 쓴다.
+ */
+@utility font-pixel {
+  font-family: var(--font-pixel), var(--font-sans);
+  font-weight: 400;
+  /* 픽셀 폰트는 같은 font-size 에서 훨씬 크고 넓게 보인다.
+     본문보다 두 단계 작게 잡는 걸 기본으로. */
+  line-height: 1.5;
+}
+
+:root {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+  background: var(--color-surface);
+  color: var(--color-ink);
   -webkit-text-size-adjust: 100%;
   overflow-wrap: break-word;
 }

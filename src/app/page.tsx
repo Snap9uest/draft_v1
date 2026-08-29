@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, LinkButton } from "@/components/ui";
+import { Button, Card, LinkButton, Logo } from "@/components/ui";
 import { BOTS, emojiAvatar } from "@/lib/bots";
 import { setHostToken } from "@/lib/session";
 
@@ -25,6 +25,9 @@ const PITCH = [
     body: "내 캐릭터랑 오늘 받은 칭호, 제일 잘 나온 사진이 네컷 티켓 한 장으로 남아요.",
   },
 ];
+
+/** 피치 카드 앞 점토 칩. 런타임 조립이 아니라 리터럴이라 Tailwind 가 스캔한다. */
+const CHIPS = ["bg-brand-lavender", "bg-brand-peach", "bg-brand-teal"];
 
 /** 서버에서는 알 수 없는 값이라 useSyncExternalStore 로 읽는다 — 하이드레이션 불일치 없이 클라이언트에서만 채워진다. */
 const noSubscribe = () => () => {};
@@ -114,41 +117,36 @@ export default function Home() {
   }
 
   return (
-    <main className="relative flex flex-1 flex-col items-center overflow-hidden px-5 pb-16 pt-12">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-70 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(38% 60% at 22% 12%, #ff3d8b55, transparent 70%), " +
-            "radial-gradient(42% 55% at 84% 0%, #7c5cff55, transparent 70%), " +
-            "radial-gradient(30% 40% at 55% 28%, #c9ff4d22, transparent 70%)",
-        }}
-      />
+    <main className="flex flex-1 flex-col items-center px-5 pb-16 pt-12">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center text-center">
+          <p className="inline-flex items-center gap-2 rounded-full border border-hairline bg-surface-soft px-3 py-1 text-xs font-medium text-ink-muted">
+            <span className="size-1.5 rounded-full bg-brand-pink-hot" />
+            파티하는 동안 같이 노는 AI
+          </p>
 
-      <div className="relative w-full max-w-md">
-        <p className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white/70">
-          <span className="size-1.5 rounded-full bg-pop" />
-          파티하는 동안 같이 노는 AI
-        </p>
-
-        <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight">
-          Snap<span className="text-accent">Quest</span>
-        </h1>
-        <p className="mt-3 text-lg font-semibold leading-snug text-white/90">
-          QR 한 번 찍으면 내 폰에 나만의 사진 미션 9칸이 뜨고,
-          <br />
-          파티가 끝나면 그 판이 네컷 사진 한 장으로 남아요.
-        </p>
+          <h1 className="mt-6">
+            <Logo className="text-2xl sm:text-3xl" />
+          </h1>
+          <p className="mt-4 text-lg font-semibold leading-snug text-ink-body">
+            QR 한 번 찍으면 내 폰에 나만의 사진 미션 9칸이 뜨고,
+            <br />
+            파티가 끝나면 그 판이 네컷 사진 한 장으로 남아요.
+          </p>
+        </div>
 
         <ol className="mt-7 space-y-3">
-          {PITCH.map((p) => (
-            <li key={p.n} className="flex gap-3">
-              <span className="mt-0.5 shrink-0 font-mono text-sm font-bold text-accent">
-                {p.n}
-              </span>
-              <span className="text-sm leading-relaxed text-white/70">
-                <b className="font-semibold text-white">{p.head}</b> — {p.body}
+          {PITCH.map((p, i) => (
+            <li
+              key={p.n}
+              className="flex gap-3 rounded-2xl bg-surface-soft p-4 leading-relaxed"
+            >
+              <span
+                aria-hidden
+                className={`mt-1.5 size-2.5 shrink-0 rounded-full ${CHIPS[i]}`}
+              />
+              <span className="text-sm text-ink-muted">
+                <b className="font-semibold text-ink">{p.head}</b>{" · "}{p.body}
               </span>
             </li>
           ))}
@@ -179,7 +177,7 @@ export default function Home() {
               spellCheck={false}
               maxLength={6}
               placeholder="방 코드 6자리"
-              className="min-h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 font-mono text-lg tracking-[0.2em] placeholder:font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-white/35 focus:border-accent focus:outline-none"
+              className="min-h-12 w-full rounded-2xl border border-hairline bg-card-plain px-4 font-mono text-lg tracking-[0.2em] text-ink placeholder:font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-ink-muted focus:border-ink focus:outline-2 focus:outline-offset-2 focus:outline-ink"
             />
             <Button type="submit" variant="ghost" disabled={code.length !== 6}>
               입장하기
@@ -187,17 +185,17 @@ export default function Home() {
           </form>
 
           {error && (
-            <p role="alert" className="text-sm text-pop">
+            <p role="alert" className="text-sm font-medium text-error">
               {error}
             </p>
           )}
         </div>
 
-        <Card className="mt-8">
-          <h2 className="text-sm font-bold text-white">심사관용 데모</h2>
-          <p className="mt-1 text-sm leading-relaxed text-white/60">
+        <Card className="mt-8 pt-7" accentColor="var(--color-brand-peach)">
+          <h2 className="text-sm font-bold text-ink">심사관용 데모</h2>
+          <p className="mt-1 text-sm leading-relaxed text-ink-muted">
             봇 참가자 6명이 이미 놀고 있는 방이에요. 혼자 열어도 파티가 돌아가요.
-            실제 파티에서는 세 화면이 동시에 켜져 있어요 — TV는 빔에, 호스트는 진행자 폰에,
+            실제 파티에서는 세 화면이 동시에 켜져 있어요. TV는 빔에, 호스트는 진행자 폰에,
             게스트는 참가자 폰에. 아래 링크로 나란히 열어보세요.
           </p>
 
@@ -210,7 +208,7 @@ export default function Home() {
                 alt=""
                 width={32}
                 height={32}
-                className="size-8 rounded-lg ring-2 ring-[#0a0910]"
+                className="size-8 rounded-lg bg-card-plain ring-2 ring-card"
               />
             ))}
           </div>
@@ -226,9 +224,9 @@ export default function Home() {
 
           {demoCode && (
             <div className="mt-4">
-              <p className="text-sm text-white/60">
+              <p className="text-sm text-ink-muted">
                 방 코드{" "}
-                <b className="font-mono tracking-[0.2em] text-accent">{demoCode}</b>
+                <b className="font-mono tracking-[0.2em] text-brand-pink">{demoCode}</b>
               </p>
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {[
@@ -241,11 +239,11 @@ export default function Home() {
                     href={l.href}
                     target="_blank"
                     rel="noreferrer"
-                    aria-label={`${l.label} 화면 새 탭에서 열기 — ${l.hint}`}
-                    className="flex-col gap-0 px-2 text-sm"
+                    aria-label={`${l.label} 화면 새 탭에서 열기, ${l.hint}`}
+                    className="flex-col gap-0 bg-card-plain px-2 text-sm"
                   >
                     {l.label}
-                    <span className="text-[11px] font-normal text-white/50">{l.hint}</span>
+                    <span className="text-[11px] font-normal text-ink-muted">{l.hint}</span>
                   </LinkButton>
                 ))}
               </div>
@@ -253,7 +251,7 @@ export default function Home() {
           )}
         </Card>
 
-        <p className="mt-6 text-center text-xs text-white/35">
+        <p className="mt-6 text-center text-xs text-ink-muted">
           설치도 로그인도 없어요 · 사진은 7일 뒤 자동으로 지워져요
         </p>
       </div>

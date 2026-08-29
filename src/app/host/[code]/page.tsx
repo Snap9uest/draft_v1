@@ -3,12 +3,24 @@
 import Link from "next/link";
 import QRCode from "qrcode";
 import { use, useEffect, useState, useSyncExternalStore } from "react";
+import { Button, Card } from "@/components/ui";
 import { browserDb } from "@/lib/db/client";
 import { getRoomPhotos, getRoomWithParticipants } from "@/lib/db/queries";
 import type { Participant, Photo, Room, RoomStatus } from "@/lib/db/types";
 import { getHostToken, setHostToken } from "@/lib/session";
 
 const TONES = ["친목", "동아리", "워크샵", "파티"];
+
+/**
+ * ui/index.tsx 의 Button 과 같은 알약 규격.
+ * Button 으로 감쌀 수 없는 자리(next/link, error 색 위험 동작)에만 쓴다.
+ * Button 에 className 으로 색을 덮어쓰면 Tailwind 유틸 순서에 따라
+ * 이기고 지는 게 갈리므로 덮어쓰지 않고 여기서 처음부터 조립한다.
+ */
+const PILL =
+  "inline-flex min-h-12 items-center justify-center rounded-full px-6 text-base font-semibold " +
+  "transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
 const NO_SUBSCRIBE = () => () => {};
 
@@ -173,18 +185,18 @@ export default function HostPage({
     });
 
   if (!loaded) {
-    return <main className="p-6 text-sm text-neutral-400">호스트 화면 여는 중이에요…</main>;
+    return <main className="p-6 text-sm text-ink-muted">호스트 화면 여는 중이에요…</main>;
   }
 
   if (!room) {
     return (
       <main className="mx-auto max-w-md p-6">
-        <h1 className="text-xl font-bold">방을 찾을 수 없어요</h1>
-        <p className="mt-2 text-sm text-neutral-400">
-          방 코드 <span className="font-mono">{code}</span> 로 열린 파티가 없어요. 코드를 다시
-          확인해 주세요.
+        <h1 className="text-xl font-bold text-ink">방을 찾을 수 없어요</h1>
+        <p className="mt-2 text-sm text-ink-body">
+          방 코드 <span className="font-mono font-semibold text-ink">{code}</span> 로 열린
+          파티가 없어요. 코드를 다시 확인해 주세요.
         </p>
-        <Link href="/" className="mt-6 inline-block underline">
+        <Link href="/" className={`${PILL} mt-6 bg-primary text-on-primary`}>
           홈으로 가기
         </Link>
       </main>
@@ -196,32 +208,40 @@ export default function HostPage({
   ).length;
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-6 p-4 pb-24">
-      <header className="flex items-baseline justify-between">
-        <h1 className="text-lg font-bold">파티 진행하기</h1>
-        <span className="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-200">
+    <main className="mx-auto flex w-full max-w-md flex-col gap-5 p-4 pb-24">
+      <header className="flex items-baseline justify-between gap-3">
+        <h1 className="text-lg font-bold text-ink">파티 진행하기</h1>
+        <span className="shrink-0 rounded-full bg-surface-variant px-3 py-1.5 text-xs font-semibold text-ink">
           {STATUS_LABEL[room.status]}
         </span>
       </header>
 
-      <section className="rounded-2xl bg-neutral-900 p-5 text-center text-white">
-        <p className="text-xs text-neutral-400">방 코드</p>
-        <p className="font-mono text-5xl font-bold tracking-[0.2em]">{room.code}</p>
+      {/*
+       * QR 카드만 크림이 아니라 순백이다 — 카메라가 QR 을 잡으려면
+       * 흰 바탕 위 검정 모듈이라는 대비가 필요하다. 멋보다 스캔이 우선.
+       */}
+      <section className="rounded-3xl bg-card-plain p-5 text-center shadow-clay">
+        <p className="text-xs font-semibold tracking-[0.2em] text-ink-muted">방 코드</p>
+        {/* 방 코드는 영숫자라 픽셀 폰트를 써도 안전하다(한글은 금지). */}
+        <p className="mt-2 font-pixel text-4xl text-ink" translate="no">
+          {room.code}
+        </p>
         {qr ? (
           <img
             src={qr}
-            alt={`${room.code} 방 입장 QR 코드 — 폰 카메라로 찍으면 바로 입장해요`}
-            className="mx-auto mt-4 h-56 w-56 rounded-xl bg-white p-2"
+            alt={`${room.code} 방 입장 QR 코드. 폰 카메라로 찍으면 바로 입장해요`}
+            className="mx-auto mt-5 h-56 w-56 rounded-2xl border border-hairline bg-white p-2"
           />
         ) : (
-          <p className="mt-4 text-sm text-neutral-400">
+          <p className="mt-5 text-sm text-ink-body">
             QR이 안 만들어졌어요. 아래 주소를 대신 알려주세요.
           </p>
         )}
-        <p className="mt-3 break-all text-xs text-neutral-400">{joinUrl}</p>
-        <button
+        <p className="mt-4 break-all text-xs text-ink-muted">{joinUrl}</p>
+        <Button
           type="button"
-          className="mt-3 min-h-11 w-full rounded-xl bg-neutral-800 px-4 text-sm"
+          variant="ghost"
+          className="mt-4 w-full"
           onClick={() => {
             navigator.clipboard
               ?.writeText(joinUrl)
@@ -230,29 +250,45 @@ export default function HostPage({
           }}
         >
           입장 링크 복사하기
-        </button>
+        </Button>
       </section>
 
-      <section className="flex gap-3 text-center">
-        <div className="flex-1 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-900">
-          <p className="text-2xl font-bold">{participants.length}</p>
-          <p className="text-xs text-neutral-500">참가자</p>
+      {/* 큰 화면은 이 링크 하나로만 열린다 — 호스트 폰과 빔은 다른 탭이어야 한다. */}
+      <section className="rounded-3xl bg-card p-4 shadow-clay">
+        <a
+          href={`/tv/${code}`}
+          target="_blank"
+          rel="noreferrer"
+          className={`${PILL} w-full bg-primary text-on-primary`}
+        >
+          TV 화면 열기 ↗
+        </a>
+        <p className="mt-2 text-center text-xs text-ink-muted">
+          새 탭으로 열려요. 빔프로젝터나 큰 화면에 그 탭을 띄워 두세요. 진행 버튼은
+          거기에 안 보여요.
+        </p>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 text-center">
+        <div className="rounded-3xl bg-card p-4 shadow-clay">
+          <p className="text-3xl font-bold text-ink">{participants.length}</p>
+          <p className="mt-1 text-xs text-ink-muted">참가자</p>
         </div>
-        <div className="flex-1 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-900">
-          <p className="text-2xl font-bold">{verified}</p>
-          <p className="text-xs text-neutral-500">인증된 미션 사진</p>
+        <div className="rounded-3xl bg-card p-4 shadow-clay">
+          <p className="text-3xl font-bold text-ink">{verified}</p>
+          <p className="mt-1 text-xs text-ink-muted">인증된 미션 사진</p>
         </div>
       </section>
 
       {!hostToken && (
-        <section className="rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold">지금은 보기만 할 수 있어요</p>
-          <p className="mt-1 text-neutral-500">
+        <Card accentColor="var(--color-brand-ochre)" className="text-sm">
+          <p className="font-bold text-ink">지금은 보기만 할 수 있어요</p>
+          <p className="mt-1 text-ink-body">
             방을 만든 기기에서 이 주소를 열면 바로 진행할 수 있어요. 진행을 넘겨받는
             거라면, 그 기기에서 받은 진행 코드를 아래에 붙여넣어 주세요.
           </p>
           <form
-            className="mt-3 flex gap-2"
+            className="mt-4 flex flex-col gap-2"
             onSubmit={(e) => {
               e.preventDefault();
               const input = new FormData(e.currentTarget).get("token");
@@ -268,41 +304,47 @@ export default function HostPage({
             <input
               id="host-token"
               name="token"
-              className="min-h-11 flex-1 rounded-lg border border-neutral-300 px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+              className="min-h-12 w-full rounded-full border border-hairline bg-card-plain px-4 text-sm text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               placeholder="넘겨받은 진행 코드"
             />
-            <button type="submit" className="min-h-11 rounded-lg bg-neutral-900 px-4 text-sm text-white dark:bg-white dark:text-neutral-900">
+            <button
+              type="submit"
+              className={`${PILL} w-full bg-primary text-on-primary`}
+            >
               이 기기로 진행하기
             </button>
           </form>
-        </section>
+        </Card>
       )}
 
       {error && (
-        <p role="alert" className="rounded-xl bg-red-500/10 p-3 text-sm text-red-500">
+        <p
+          role="alert"
+          className="rounded-2xl bg-error/10 px-4 py-3 text-sm font-medium text-error"
+        >
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="text-sm text-neutral-500">
+        <p role="status" className="text-sm text-ink-body">
           {notice}
         </p>
       )}
 
       <fieldset disabled={!hostToken || busy !== ""} className="contents">
         <section>
-          <h2 className="mb-2 text-sm font-semibold">미션 분위기</h2>
+          <h2 className="mb-2 text-sm font-bold text-ink">미션 분위기</h2>
           <div className="grid grid-cols-4 gap-2">
             {TONES.map((tone) => (
               <button
                 key={tone}
                 type="button"
-                aria-label={`미션 분위기 고르기 — ${tone}`}
+                aria-label={`미션 분위기 고르기, ${tone}`}
                 aria-pressed={room.tone_preset === tone}
-                className={`min-h-12 rounded-xl text-sm ${
+                className={`min-h-12 rounded-full text-sm font-semibold transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                   room.tone_preset === tone
-                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                    : "bg-neutral-100 dark:bg-neutral-900"
+                    ? "bg-primary text-on-primary"
+                    : "bg-surface-variant text-ink hover:bg-surface-dim"
                 } disabled:opacity-40`}
                 onClick={() => patchRoom({ tonePreset: tone })}
               >
@@ -310,41 +352,46 @@ export default function HostPage({
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-neutral-500">
+          <p className="mt-2 text-xs text-ink-muted">
             지금 고른 분위기로 AI가 미션을 골라요. 이미 들어온 사람의 빙고판은 그대로예요.
           </p>
         </section>
 
-        <section className="flex items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900">
-          <label htmlFor="reward" className="text-sm">
-            <span className="font-semibold">현장 리워드</span>
-            <span className="block text-xs text-neutral-500">
+        {/* 행 전체가 label — 체크박스(28px)만으로는 터치 타깃 44px 을 못 채운다. */}
+        <label
+          htmlFor="reward"
+          className="flex min-h-16 cursor-pointer items-center justify-between gap-4 rounded-3xl bg-card p-4 shadow-clay"
+        >
+          <span className="text-sm">
+            <span className="block font-bold text-ink">현장 리워드</span>
+            <span className="block text-xs text-ink-muted">
               오늘 상품이 걸려 있으면 켜 두세요.
             </span>
-          </label>
+          </span>
           <input
             id="reward"
             type="checkbox"
-            className="h-7 w-7 shrink-0 accent-neutral-900 disabled:opacity-40 dark:accent-white"
+            className="h-7 w-7 shrink-0 accent-primary disabled:opacity-40"
             checked={room.reward_on}
             onChange={() => patchRoom({ rewardOn: !room.reward_on })}
           />
-        </section>
+        </label>
 
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold">파티 진행</h2>
+          <h2 className="text-sm font-bold text-ink">파티 진행</h2>
           {room.status === "lobby" && (
-            <button
+            <Button
               type="button"
-              className="min-h-12 rounded-xl bg-neutral-900 text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
+              className="w-full"
               onClick={() => patchRoom({ status: "live" })}
             >
               파티 시작하기
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
-            className="min-h-12 rounded-xl bg-neutral-100 disabled:opacity-40 dark:bg-neutral-900"
+            variant="ghost"
+            className="w-full"
             onClick={() =>
               run("bots", async () => {
                 const { added } = await post(`/api/room/${code}/bots`, { hostToken });
@@ -358,10 +405,32 @@ export default function HostPage({
             }
           >
             {busy === "bots" ? "봇 참가자 부르는 중이에요…" : "봇 참가자 부르기"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="min-h-12 rounded-xl bg-neutral-100 disabled:opacity-40 dark:bg-neutral-900"
+            variant="ghost"
+            className="w-full"
+            onClick={() =>
+              run("fourcut", async () => {
+                const { alreadyRunning } = await post("/api/fourcut/start", {
+                  roomCode: code,
+                  hostToken,
+                });
+                setNotice(
+                  alreadyRunning
+                    ? "네컷 타임이 이미 돌고 있어요. TV 화면을 봐 주세요."
+                    : "네컷 타임을 시작했어요! 5초 세고 나서 컷마다 7초씩, 다 같이 네 장을 찍어요.",
+                );
+                refresh();
+              })
+            }
+          >
+            {busy === "fourcut" ? "네컷 타임 여는 중이에요…" : "네컷 타임 시작하기 📸"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
             onClick={() =>
               run("award", async () => {
                 await post(`/api/room/${code}/award`, { hostToken });
@@ -371,24 +440,27 @@ export default function HostPage({
             }
           >
             {busy === "award" ? "AI가 칭호를 고르는 중이에요…" : "TV에 칭호 발표하기"}
-          </button>
+          </Button>
+          {/* error 색은 이 화면에서 여기에만 쓴다 — 되돌릴 수 없는 유일한 동작. */}
           {confirmEnd ? (
-            <div className="rounded-xl border border-red-500/60 p-3">
-              <p className="text-sm">
+            <div className="rounded-3xl border border-error/40 bg-error/5 p-4">
+              <p className="text-sm text-ink-body">
                 파티를 끝낼까요? 한 번 끝내면 되돌릴 수 없어요. 새로 들어오거나 사진을
                 올리는 건 막히고, 앨범과 네컷 티켓은 그대로 남아요.
               </p>
-              <div className="mt-3 flex gap-2">
-                <button
+              {/* 나란히 두면 360px 폭에서 두 라벨이 다 줄바꿈된다 — 세로로 쌓는다. */}
+              <div className="mt-4 flex flex-col gap-2">
+                <Button
                   type="button"
-                  className="min-h-12 flex-1 rounded-xl bg-neutral-100 disabled:opacity-40 dark:bg-neutral-800"
+                  variant="ghost"
+                  className="w-full"
                   onClick={() => setConfirmEnd(false)}
                 >
                   계속 진행하기
-                </button>
+                </Button>
                 <button
                   type="button"
-                  className="min-h-12 flex-1 rounded-xl bg-red-600 text-white disabled:opacity-40"
+                  className={`${PILL} w-full bg-error text-on-error`}
                   onClick={async () => {
                     await patchRoom({ status: "ended" });
                     setConfirmEnd(false);
@@ -401,7 +473,7 @@ export default function HostPage({
           ) : (
             <button
               type="button"
-              className="min-h-12 rounded-xl border border-red-500/60 text-red-500 disabled:opacity-40"
+              className={`${PILL} w-full border border-error text-error hover:bg-error/10`}
               onClick={() => setConfirmEnd(true)}
             >
               파티 끝내기
@@ -410,12 +482,12 @@ export default function HostPage({
         </section>
 
         <section>
-          <h2 className="mb-2 text-sm font-semibold">올라온 사진 {photos.length}장</h2>
+          <h2 className="mb-2 text-sm font-bold text-ink">올라온 사진 {photos.length}장</h2>
           {photos.length === 0 ? (
-            <p className="text-sm text-neutral-500">아직 첫 사진을 기다리는 중이에요 📸</p>
+            <p className="text-sm text-ink-muted">아직 첫 사진을 기다리는 중이에요 📸</p>
           ) : (
             <>
-            <p className="mb-2 text-xs text-neutral-500">
+            <p className="mb-3 text-xs text-ink-muted">
               큰 화면에 띄우고 싶지 않은 사진은 TV에서 내려 주세요. 내려도 사진이 지워지지는
               않고, 언제든 다시 띄울 수 있어요.
             </p>
@@ -423,14 +495,17 @@ export default function HostPage({
               {photos.map((photo) => {
                 const owner = participants.find((p) => p.id === photo.owner_id);
                 return (
-                  <li key={photo.id} className="overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
+                  <li
+                    key={photo.id}
+                    className="overflow-hidden rounded-2xl bg-card shadow-clay"
+                  >
                     <img
                       src={photo.url}
                       alt={photo.caption || `${owner?.nickname ?? "누군가"}님이 올린 사진`}
-                      className={`aspect-square w-full object-cover ${photo.hidden ? "opacity-30" : ""}`}
+                      className={`aspect-square w-full bg-surface-dim object-cover ${photo.hidden ? "opacity-40" : ""}`}
                     />
                     <div className="p-2">
-                      <p className="truncate text-xs text-neutral-500">
+                      <p className="truncate text-xs text-ink-muted">
                         {owner?.nickname ?? "누군가"}
                       </p>
                       <button
@@ -438,7 +513,7 @@ export default function HostPage({
                         aria-label={`${owner?.nickname ?? "누군가"}님의 사진 ${
                           photo.hidden ? "TV에 다시 띄우기" : "TV에서 내리기"
                         }`}
-                        className="mt-1 min-h-11 w-full rounded-lg bg-neutral-200 text-xs disabled:opacity-40 dark:bg-neutral-800"
+                        className="mt-1.5 min-h-11 w-full rounded-full bg-surface-variant text-xs font-semibold text-ink transition hover:bg-surface-dim active:scale-[0.98] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                         onClick={() => toggleHidden(photo)}
                       >
                         {photo.hidden ? "TV에 다시 띄우기" : "TV에서 내리기"}
@@ -453,8 +528,12 @@ export default function HostPage({
         </section>
       </fieldset>
 
-      <Link href={`/tv/${code}`} className="text-center text-sm underline">
-        TV 화면 열기
+      {/* 쪽지 내리기는 게스트 화면의 방명록 탭에서 한다 — 이 기기엔 진행 코드가 있다. */}
+      <Link
+        href={`/play/${code}?tab=notes`}
+        className={`${PILL} w-full border border-hairline text-ink hover:bg-surface-soft`}
+      >
+        방명록 보기 · 쪽지 내리기
       </Link>
     </main>
   );

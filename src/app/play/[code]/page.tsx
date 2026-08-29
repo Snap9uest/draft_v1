@@ -9,11 +9,13 @@ export default async function PlayPage({
 }) {
   const [{ code }, query] = await Promise.all([params, searchParams]);
   const invite = query.invite;
+  const tab =
+    query.tab === "album" ? "album" : query.tab === "notes" ? "notes" : "board";
   return (
     <PlayScreen
       code={code.toUpperCase()}
       invitedBy={typeof invite === "string" ? invite : undefined}
-      initialTab={query.tab === "album" ? "album" : "board"}
+      initialTab={tab}
     />
   );
 }

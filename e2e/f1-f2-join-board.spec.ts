@@ -37,6 +37,14 @@ const BANNED = [
 ];
 
 /**
+ * 입장 폼. 라벨·버튼 문구는 카피 수정이 잦아 셀렉터로 못 쓴다 —
+ * label htmlFor 가 가리키는 input id 와 submit 타입이 이 폼의 안정적인 계약이다.
+ */
+const nicknameInput = (page: Page) => page.locator("#nickname");
+const introInput = (page: Page) => page.locator("#intro");
+const submit = (page: Page) => page.locator('form button[type="submit"]');
+
+/**
  * 빙고 칸 9개. 접근명은 `3번 미션 <문구>. 사진 올리기` 꼴이라 번호 접두사만 잡는다 —
  * 뒤쪽 안내 문구는 자주 바뀌므로 걸지 않는다.
  */
@@ -61,9 +69,9 @@ async function joinViaUi(
 ): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
   await page.goto(`/play/${code}`);
-  await page.getByLabel("닉네임").fill(nickname);
-  await page.getByLabel(/자기소개/).fill(intro);
-  await page.getByRole("button", { name: /입장/ }).click();
+  await nicknameInput(page).fill(nickname);
+  await introInput(page).fill(intro);
+  await submit(page).click();
   return page;
 }
 
@@ -71,8 +79,8 @@ test("세션 없이 열면 로그인 없이 입장 폼이 뜬다", async ({ page
   const res = await page.goto(`/play/${room.code}`);
   expect(res?.status()).toBe(200);
 
-  await expect(page.getByLabel("닉네임")).toBeVisible();
-  await expect(page.getByRole("button", { name: /입장/ })).toBeVisible();
+  await expect(nicknameInput(page)).toBeVisible();
+  await expect(submit(page)).toBeEnabled();
   // 로그인 벽으로 튕기지 않는다.
   expect(page.url()).toContain(`/play/${room.code}`);
   // 아직 판은 없다.
@@ -89,11 +97,11 @@ test("입장 제출은 캐릭터 생성을 기다리지 않고, 새로고침해�
   await joinRoom(request, room.code, { nickname: "먼저온사람" });
 
   await page.goto(`/play/${room.code}`);
-  await page.getByLabel("닉네임").fill("소미");
-  await page.getByLabel(/자기소개/).fill("사진 찍는 거 좋아함\n맥주보다 하이볼");
+  await nicknameInput(page).fill("소미");
+  await introInput(page).fill("사진 찍는 거 좋아함\n맥주보다 하이볼");
 
   const started = Date.now();
-  await page.getByRole("button", { name: /입장/ }).click();
+  await submit(page).click();
   await expect(cells(page).first()).toBeVisible();
   const elapsed = Date.now() - started;
 
@@ -102,12 +110,12 @@ test("입장 제출은 캐릭터 생성을 기다리지 않고, 새로고침해�
   // F2: 3×3.
   await expect(cells(page)).toHaveCount(9);
   // F1-3: 생성 전에도 프리셋 아바타가 이미 붙어 있다.
-  await expect(page.getByRole("img", { name: "소미의 캐릭터" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /소미/ })).toBeVisible();
 
   // F1 재접속: 로컬 토큰으로 복원 — 폼으로 되돌아가지 않는다.
   await page.reload();
   await expect(cells(page)).toHaveCount(9);
-  await expect(page.getByLabel("닉네임")).toHaveCount(0);
+  await expect(nicknameInput(page)).toHaveCount(0);
 });
 
 test("참가자 둘은 서로 다른 9칸을 받는다", async ({ browser, room }) => {

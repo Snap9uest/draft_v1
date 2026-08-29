@@ -21,6 +21,7 @@ import {
   type TicketFrame,
 } from "@/app/api/ticket/frames";
 import { clearPick, placePick, unlockState } from "@/app/api/ticket/rules";
+import { Button, Card } from "@/components/ui";
 import { H, LAYOUT, W } from "@/lib/canvas/constants";
 import type { TicketResult } from "@/lib/canvas/ticket";
 import { browserDb } from "@/lib/db/client";
@@ -30,6 +31,18 @@ import { saveImage } from "@/lib/download";
 import { RETENTION_NOTICE, retentionLabel } from "@/lib/retention";
 import { getSessionToken } from "@/lib/session";
 import { composeTicket } from "./gold";
+
+/**
+ * ui/index.tsx 의 Button 과 같은 알약이되 한 단 작다(text-sm/px-5).
+ * Button 에 className 으로 크기를 덮어쓰면 text-base 와 text-sm 중 어느 쪽이
+ * 이길지 Tailwind 유틸 순서에 달려 있어서, 덮어쓰지 않고 여기서 조립한다.
+ * next/link 로 감싸는 자리에도 이걸 쓴다(<a> 로 바꾸면 클라이언트 라우팅이 깨진다).
+ */
+const PILL =
+  "inline-flex min-h-12 items-center justify-center rounded-full px-5 text-sm font-semibold " +
+  "transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+const GHOST = "border border-hairline text-ink hover:bg-surface-soft active:bg-surface-variant";
 
 interface Data {
   room: Room;
@@ -236,19 +249,23 @@ export default function TicketScreen({ code }: { code: string }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-4 px-4 py-5">
       <header className="flex items-baseline justify-between gap-2">
-        <h1 className="text-lg font-bold">내 엔딩 티켓</h1>
-        <span className="text-xs text-white/50">{dday}</span>
+        <h1 className="text-lg font-bold text-ink">내 엔딩 티켓</h1>
+        <span className="shrink-0 text-xs font-medium text-ink-muted">{dday}</span>
       </header>
 
       {data && data.room.status !== "ended" && (
-        <p className="rounded-xl bg-white/5 px-3 py-2 text-xs text-white/60">
-          파티가 아직 진행 중이에요 — 지금까지 모인 사진으로 미리 만들어 뒀어요.
+        <p className="rounded-2xl bg-surface-variant px-4 py-2.5 text-xs text-ink-body">
+          파티가 아직 진행 중이에요. 지금까지 모인 사진으로 미리 만들어 뒀어요.
         </p>
       )}
 
-      {/* 선점 렌더링: 스피너 대신 티켓이 등장하고, 4컷이 한 장씩 꽂힌다. */}
+      {/*
+       * 선점 렌더링: 스피너 대신 티켓이 등장하고, 4컷이 한 장씩 꽂힌다.
+       * 합성된 티켓 자체가 어두운 프레임이라 자리를 ink 로 미리 깔아 둔다 —
+       * 크림으로 깔면 이미지가 붙는 순간 밝→어둠 플래시가 난다.
+       */}
       <div
-        className="relative w-full overflow-hidden rounded-2xl bg-[#0f0e18] shadow-2xl"
+        className="relative w-full overflow-hidden rounded-3xl bg-ink shadow-clay-lg"
         style={{ aspectRatio: `${W} / ${H}` }}
       >
         {view && (
@@ -264,7 +281,7 @@ export default function TicketScreen({ code }: { code: string }) {
           <div
             key={`veil-${i}`}
             aria-hidden
-            className="pointer-events-none absolute rounded-lg bg-[#1a1830] transition-all duration-500"
+            className="pointer-events-none absolute rounded-lg bg-ink transition-all duration-500"
             style={{
               ...cellBox(i),
               opacity: i < reveal ? 0 : 1,
@@ -278,18 +295,19 @@ export default function TicketScreen({ code }: { code: string }) {
             type="button"
             onClick={() => setPicking(i)}
             aria-label={`${i + 1}번 컷 바꾸기`}
-            className="absolute rounded-lg ring-inset ring-accent/0 transition active:ring-2 active:ring-accent/80"
+            className="absolute rounded-lg ring-inset ring-brand-pink-hot/0 transition active:ring-2 active:ring-brand-pink-hot"
             style={cellBox(i)}
           />
         ))}
       </div>
 
-      <p className="text-center text-xs text-white/50">
+      <p className="text-center text-xs text-ink-muted">
         칸을 탭하면 그 컷만 바꿀 수 있어요 · 이미지를 길게 눌러 사진에 저장할 수도 있어요
       </p>
 
       {view && view.result.failedCells.length > 0 && (
-        <p className="rounded-xl bg-pop/15 px-3 py-2 text-xs text-pop">
+        // pink-hot 은 크림 위 3.2:1 로 본문에 못 쓴다 — 글자는 brand-pink 로.
+        <p className="rounded-2xl bg-brand-blush/40 px-4 py-2.5 text-xs font-medium text-brand-pink">
           {view.result.failedCells.map((i) => i + 1).join("·")}번 컷을 불러오지 못해 카드로
           채웠어요.
         </p>
@@ -303,12 +321,14 @@ export default function TicketScreen({ code }: { code: string }) {
               key={f}
               type="button"
               onClick={() => pickFrame(f)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 frame === f
-                  ? "bg-accent text-black"
+                  ? // pink-hot 알약은 검정 글자와만 쓴다(6.6:1). 흰 글자는 불합격.
+                    "bg-brand-pink-hot text-ink"
                   : locked
-                    ? "bg-white/5 text-white/40"
-                    : "bg-white/10 text-white"
+                    ? // surface-dim 위에서는 ink-muted 가 3.7:1 로 떨어진다 → ink-body.
+                      "bg-surface-dim text-ink-body"
+                    : "bg-surface-variant text-ink hover:bg-surface-dim"
               }`}
             >
               {locked ? "🔒 " : ""}
@@ -319,60 +339,49 @@ export default function TicketScreen({ code }: { code: string }) {
       </section>
 
       {showUnlock && unlock && !unlock.unlocked && (
-        <section className="rounded-2xl bg-white/5 p-4 text-sm">
-          <p className="font-semibold">골드 프레임 해금 조건 (둘 중 하나)</p>
-          <ul className="mt-2 space-y-1 text-white/70">
+        <Card accentColor="var(--color-brand-ochre)" className="text-sm">
+          <p className="font-bold text-ink">골드 프레임 해금 조건 (둘 중 하나)</p>
+          <ul className="mt-2 space-y-1 text-ink-body">
             <li>{unlock.bingoLines >= 1 ? "✅" : "⬜"} 빙고 1줄 완성하기</li>
             <li>{unlock.invited >= 1 ? "✅" : "⬜"} 내 초대 링크로 1명 입장 (현재 {unlock.invited}명)</li>
           </ul>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-4 flex gap-2">
             <button
               type="button"
               onClick={copyInvite}
-              className="flex-1 rounded-xl bg-white/10 px-3 py-2 font-semibold"
+              className={`${PILL} ${GHOST} flex-1`}
             >
               초대 링크 복사
             </button>
-            <Link
-              href={`/play/${code}`}
-              className="flex-1 rounded-xl bg-white/10 px-3 py-2 text-center font-semibold"
-            >
+            <Link href={`/play/${code}`} className={`${PILL} ${GHOST} flex-1`}>
               빙고 이어서 하기
             </Link>
           </div>
-        </section>
+        </Card>
       )}
 
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!view || busy}
-          className="flex-1 rounded-2xl bg-accent px-4 py-3.5 text-base font-bold text-black disabled:opacity-50"
-        >
+        <Button type="button" onClick={onSave} disabled={!view || busy} className="flex-1">
           {busy ? "저장 중…" : "티켓 저장 · 공유"}
-        </button>
-        <Link
-          href={albumHref}
-          className="rounded-2xl bg-white/10 px-4 py-3.5 text-base font-semibold"
-        >
+        </Button>
+        <Link href={albumHref} className={`${PILL} ${GHOST} shrink-0`}>
           앨범
         </Link>
       </div>
 
-      {notice && <p className="text-center text-sm text-white/70">{notice}</p>}
+      {notice && <p className="text-center text-sm text-ink-body">{notice}</p>}
 
       {/* 저장·공유 후 dead-end 금지 — 앨범으로 귀결시킨다. */}
       {saved && (
         <Link
           href={albumHref}
-          className="rounded-2xl bg-white/10 p-4 text-center text-sm font-semibold"
+          className="rounded-3xl bg-card p-4 text-center text-sm font-semibold text-ink shadow-clay transition hover:bg-surface-soft"
         >
           모두의 사진은 공동 앨범에 남아 있어요 → 앨범 보러 가기
         </Link>
       )}
 
-      <p className="pb-6 text-center text-xs text-white/40">{RETENTION_NOTICE}</p>
+      <p className="pb-6 text-center text-xs text-ink-muted">{RETENTION_NOTICE}</p>
 
       {picking !== null && data && (
         <PhotoSheet
@@ -409,20 +418,24 @@ function PhotoSheet({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/70" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end bg-ink/50" onClick={onClose}>
       <div
-        className="max-h-[75dvh] w-full overflow-y-auto rounded-t-3xl bg-[#151322] p-4"
+        className="max-h-[75dvh] w-full overflow-y-auto rounded-t-3xl bg-surface p-4 shadow-clay-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <p className="font-bold">{slot + 1}번 컷 바꾸기</p>
-          <button type="button" onClick={onClose} className="text-sm text-white/60">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="font-bold text-ink">{slot + 1}번 컷 바꾸기</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="-mr-2 inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-ink-body hover:bg-surface-soft"
+          >
             닫기
           </button>
         </div>
 
         {photos.length === 0 ? (
-          <p className="py-8 text-center text-sm text-white/60">
+          <p className="py-8 text-center text-sm text-ink-muted">
             아직 내 사진이 없어요. 빈 칸은 캐릭터·칭호 카드로 채워집니다.
           </p>
         ) : (
@@ -434,8 +447,8 @@ function PhotoSheet({
                   key={p.id}
                   type="button"
                   onClick={() => onPick(slot, p.id)}
-                  className={`relative aspect-4/3 overflow-hidden rounded-xl ${
-                    at >= 0 ? "ring-2 ring-accent" : ""
+                  className={`relative aspect-4/3 overflow-hidden rounded-xl bg-surface-dim ${
+                    at >= 0 ? "ring-2 ring-brand-pink-hot" : ""
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -446,7 +459,7 @@ function PhotoSheet({
                     loading="lazy"
                   />
                   {at >= 0 && (
-                    <span className="absolute right-1 top-1 rounded-full bg-accent px-1.5 text-xs font-bold text-black">
+                    <span className="absolute right-1 top-1 rounded-full bg-brand-pink-hot px-1.5 py-0.5 text-xs font-bold text-ink">
                       {at + 1}
                     </span>
                   )}
@@ -460,7 +473,7 @@ function PhotoSheet({
           <button
             type="button"
             onClick={onClear}
-            className="mt-3 w-full rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold"
+            className={`${PILL} ${GHOST} mt-3 w-full`}
           >
             이 칸 비우기 (캐릭터·칭호 카드로 채움)
           </button>
@@ -483,9 +496,9 @@ function Empty({
 }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="text-xl font-bold">{title}</h1>
-      {desc && <p className="text-sm text-white/60">{desc}</p>}
-      <Link href={href} className="rounded-2xl bg-accent px-6 py-3 font-bold text-black">
+      <h1 className="text-xl font-bold text-ink">{title}</h1>
+      {desc && <p className="text-sm text-ink-body">{desc}</p>}
+      <Link href={href} className={`${PILL} bg-primary text-on-primary`}>
         {cta}
       </Link>
     </main>

@@ -1,7 +1,10 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import Guestbook from "@/components/notes/Guestbook";
+import { readFourcut } from "@/lib/fourcut";
 import { browserDb } from "@/lib/db/client";
 import {
   getMyParticipant,
@@ -11,10 +14,20 @@ import {
 import { completedLines } from "@/lib/db/types";
 import type { BoardCell, Participant, Photo, Room } from "@/lib/db/types";
 import { getSessionToken } from "@/lib/session";
+import { Button, Card, Logo } from "@/components/ui";
 import Album from "./Album";
+import FourcutSheet from "./FourcutSheet";
 import { fileToJpegDataUrl } from "./image";
 
-const BTN = "min-h-11 rounded-full px-5 font-semibold disabled:opacity-50";
+type Tab = "board" | "album" | "notes";
+
+/** <label> 로 감싼 파일 피커용. ui/Button 의 BASE 와 같은 모양·같은 터치 타깃(48px). */
+const PILL =
+  "inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full " +
+  "px-6 text-base font-semibold transition active:scale-[0.98]";
+/** 하단 탭. 활성 알약은 brand-pink-hot + 검정 글자(흰 글자는 3.2:1 로 불합격). */
+// px-2: 탭 3개 + 카메라 버튼이 360px 폭에 함께 들어가야 한다. 높이 48px 로 터치 타깃은 유지.
+const TAB = "min-h-12 flex-1 rounded-full px-2 text-sm font-semibold transition active:scale-[0.98]";
 const err = (e: unknown) => (e instanceof Error ? e.message : "잠깐 문제가 생겼어요. 다시 해볼까요?");
 
 async function api<T>(url: string, body: unknown, method = "POST"): Promise<T> {
@@ -46,7 +59,7 @@ export default function PlayScreen({
 }: {
   code: string;
   invitedBy?: string;
-  initialTab?: "board" | "album";
+  initialTab?: Tab;
 }) {
   const [room, setRoom] = useState<Room | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -55,7 +68,9 @@ export default function PlayScreen({
   const [loading, setLoading] = useState(true);
   const [fatal, setFatal] = useState<string | null>(null);
 
-  const [tab, setTab] = useState<"board" | "album">(initialTab ?? "board");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "board");
+  /** 닫아버린 네컷 세션의 startedAt — 같은 판을 다시 밀어올리지 않는다. */
+  const [dismissedCut, setDismissedCut] = useState<string | null>(null);
   const [sheetCell, setSheetCell] = useState<number | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);
@@ -224,7 +239,7 @@ export default function PlayScreen({
   if (loading) {
     return (
       <main className="flex flex-1 items-center justify-center p-6">
-        <p className="animate-pulse text-sm text-white/60">파티 여는 중이에요…</p>
+        <p className="animate-pulse text-sm text-ink-muted">파티 여는 중이에요…</p>
       </main>
     );
   }
@@ -232,18 +247,17 @@ export default function PlayScreen({
   if (fatal || !room) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-sm text-white/80">
+        <p className="text-sm text-ink-body">
           {fatal ?? "파티를 불러오지 못했어요. 다시 눌러 주세요."}
         </p>
-        <button
+        <Button
           onClick={() => {
             setLoading(true);
             void load();
           }}
-          className={`${BTN} bg-accent text-black`}
         >
           다시 불러오기
-        </button>
+        </Button>
       </main>
     );
   }
@@ -270,34 +284,38 @@ export default function PlayScreen({
   const daysLeft = Math.ceil((new Date(room.expires_at).getTime() - now) / 86_400_000);
   const photoById = (id?: string) => photos.find((p) => p.id === id);
 
+  // 네컷 타임. 진행은 startedAt 에서 계산하므로 방 행만 있으면 폰·TV 가 같은 값을 본다.
+  const fourcut = readFourcut(room.state);
+  const fourcutLive = fourcut ? now < Date.parse(fourcut.deadline) : false;
+
   return (
     <main className="flex flex-1 flex-col pb-28">
-      <header className="sticky top-0 z-20 bg-background/95 px-4 pt-3 pb-2 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-hairline bg-surface/95 px-4 pt-3 pb-2.5 backdrop-blur">
         <div className="flex items-center gap-3">
           {me?.avatar_url ? (
             <img
               src={me.avatar_url}
               alt={`${me.nickname}의 캐릭터`}
-              className="size-11 shrink-0 rounded-full bg-white/10 object-cover"
+              className="size-11 shrink-0 rounded-full bg-surface-variant object-cover ring-2 ring-card-plain"
             />
           ) : (
             <div
-              className={`size-11 shrink-0 rounded-full bg-white/10 ${me ? "animate-pulse" : ""}`}
+              className={`size-11 shrink-0 rounded-full bg-surface-variant ring-2 ring-card-plain ${me ? "animate-pulse" : ""}`}
               aria-hidden
             />
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold">{me?.nickname ?? "게스트"}</p>
-            <p className="text-xs text-white/55">
+            <p className="truncate text-sm font-bold text-ink">{me?.nickname ?? "게스트"}</p>
+            <p className="text-xs text-ink-muted">
               {me ? `${code} · 미션 ${doneCount}/9 · 빙고 ${lines}줄` : `${code} · 앨범만 보는 중`}
             </p>
           </div>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+          <span className="rounded-full bg-surface-variant px-3 py-1 text-xs font-semibold text-ink-body">
             {daysLeft > 0 ? `앨범 D-${daysLeft}` : "앨범 마감"}
           </span>
         </div>
         {daysLeft <= 3 && (
-          <p className="mt-2 rounded-xl bg-pop/20 px-3 py-2 text-xs leading-relaxed text-pop">
+          <p className="mt-2.5 rounded-2xl bg-brand-blush/45 px-3 py-2 text-xs leading-relaxed text-ink-body">
             {daysLeft > 0
               ? `앨범은 ${daysLeft}일 뒤에 문을 닫아요. 마음에 드는 사진은 길게 눌러 저장해 두세요.`
               : "앨범은 오늘 문을 닫아요. 남은 사진은 지금 길게 눌러 저장해 두세요."}
@@ -305,19 +323,38 @@ export default function PlayScreen({
         )}
       </header>
 
+      {/* 파티가 끝나면 갈 곳은 하나 — 엔딩 티켓. 여기가 유일한 입구다. */}
+      {ended && me && (
+        <Card accentColor="var(--color-brand-pink-hot)" className="mx-4 mt-3 text-center">
+          <p className="text-sm font-bold text-ink">파티가 끝났어요 🎊</p>
+          <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+            오늘 찍은 사진으로 나만의 네컷 티켓을 만들어 가져가세요.
+          </p>
+          <Link
+            href={`/ticket/${code}`}
+            data-testid="make-ticket"
+            className="mt-3 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-primary px-6 text-base font-bold text-on-primary transition active:scale-[0.98]"
+          >
+            내 네컷 티켓 만들기 →
+          </Link>
+        </Card>
+      )}
+
       {(room.status === "award" || room.status === "ended") && me?.title && (
-        <section className="mx-4 mb-3 rounded-2xl bg-gradient-to-br from-pop/30 to-accent/20 p-4 text-center">
-          <p className="text-xs text-white/70">나의 칭호</p>
-          <p className="mt-1 text-xl font-black text-accent">🏆 {me.title}</p>
-          {me.title_basis && <p className="mt-1 text-xs text-white/70">{me.title_basis}</p>}
-        </section>
+        <Card accentColor="var(--color-brand-ochre)" className="mx-4 mt-3 mb-3 text-center">
+          <p className="text-xs text-ink-muted">나의 칭호</p>
+          <p className="mt-1 text-xl font-black tracking-tight text-ink">🏆 {me.title}</p>
+          {me.title_basis && <p className="mt-1 text-xs text-ink-muted">{me.title_basis}</p>}
+        </Card>
       )}
 
       {room.status === "award" && me && (
-        <section className="mb-3 px-4">
-          <h2 className="mb-2 text-sm font-bold">베스트샷 투표 {votedId && "· 투표했어요"}</h2>
+        <section className="mt-3 mb-3 px-4">
+          <h2 className="mb-2 text-sm font-bold text-ink">
+            베스트샷 투표 {votedId && "· 투표했어요"}
+          </h2>
           {photos.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-white/15 px-4 py-6 text-center text-xs text-white/50">
+            <p className="rounded-2xl border border-dashed border-hairline bg-surface-soft px-4 py-6 text-center text-xs text-ink-muted">
               아직 후보 사진이 없어요. 곧 올라올 거예요 📸
             </p>
           ) : (
@@ -330,8 +367,8 @@ export default function PlayScreen({
                     aria-label={`${
                       participants.find((p) => p.id === photo.owner_id)?.nickname ?? "누군가"
                     }님의 사진에 투표하기`}
-                    className={`block w-28 overflow-hidden rounded-xl border-2 ${
-                      votedId === photo.id ? "border-accent" : "border-transparent"
+                    className={`block w-28 overflow-hidden rounded-2xl border-2 bg-card-plain shadow-clay transition active:scale-[0.98] ${
+                      votedId === photo.id ? "border-primary" : "border-transparent"
                     }`}
                   >
                     <img
@@ -347,9 +384,16 @@ export default function PlayScreen({
         </section>
       )}
 
-      {tab === "board" && me ? (
-        <section className="px-4">
-          <ul className="grid grid-cols-3 gap-2">
+      {tab === "notes" ? (
+        <Guestbook
+          roomId={room.id}
+          roomCode={code}
+          participants={participants}
+          me={me}
+        />
+      ) : tab === "board" && me ? (
+        <section className="px-4 pt-3">
+          <ul className="grid grid-cols-3 gap-2.5">
             {Array.from({ length: 9 }, (_, i) => {
               const cell = board[i];
               const judging = pending?.cellIndex === i && pending.phase === "judging";
@@ -368,12 +412,12 @@ export default function PlayScreen({
                     }`}
                     data-testid={`cell-${i}`}
                     data-status={done ? "done" : judging ? "judging" : "todo"}
-                    className={`relative flex aspect-square w-full flex-col items-center justify-center overflow-hidden rounded-xl p-1.5 text-center text-[11px] leading-tight ${
+                    className={`relative flex aspect-square w-full flex-col overflow-hidden rounded-2xl p-2 text-center text-[11px] leading-tight shadow-clay transition active:scale-[0.97] ${
                       done
-                        ? "bg-accent/20 ring-2 ring-accent"
+                        ? "justify-end bg-card"
                         : judging
-                          ? "bg-white/10 ring-2 ring-pop"
-                          : "bg-white/8 ring-1 ring-white/10"
+                          ? "items-center justify-center bg-surface-soft ring-2 ring-brand-ochre"
+                          : "items-center justify-center bg-surface-variant"
                     }`}
                   >
                     {(done && photo) || judging ? (
@@ -382,20 +426,31 @@ export default function PlayScreen({
                         alt=""
                         aria-hidden
                         className={`absolute inset-0 size-full object-cover ${
-                          judging ? "opacity-35" : "opacity-70"
+                          judging ? "opacity-30" : ""
                         }`}
                       />
                     ) : null}
-                    <span className="relative z-10 line-clamp-4 font-medium text-white drop-shadow">
+                    {/* 완료 칸은 사진이 꽉 찬다 — 미션 문구가 어떤 사진 위에서도 읽히도록 아래쪽만 어둡게 깐다. */}
+                    {done && photo && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/35 to-transparent"
+                      />
+                    )}
+                    <span
+                      className={`relative z-10 line-clamp-4 font-medium ${
+                        done && photo ? "text-white" : "text-ink"
+                      }`}
+                    >
                       {cell?.mission ?? "미션 준비 중…"}
                     </span>
                     {done && (
-                      <span className="absolute top-1 right-1 z-10 rounded-full bg-accent px-1.5 text-[10px] font-black text-black">
+                      <span className="absolute top-1.5 right-1.5 z-10 grid size-6 place-items-center rounded-full bg-brand-peach text-[11px] font-black text-ink shadow-clay">
                         ✓
                       </span>
                     )}
                     {judging && (
-                      <span className="absolute bottom-1 z-10 animate-pulse rounded-full bg-pop px-2 py-0.5 text-[10px] font-bold text-white">
+                      <span className="absolute bottom-1.5 z-10 animate-pulse rounded-full bg-brand-ochre px-2 py-0.5 text-[10px] font-bold text-ink">
                         AI가 보는 중
                       </span>
                     )}
@@ -405,14 +460,14 @@ export default function PlayScreen({
             })}
           </ul>
           {board.length === 0 && (
-            <p className="mt-3 text-center text-xs text-white/50">
+            <p className="mt-3 text-center text-xs text-ink-muted">
               AI가 나만의 미션을 고르는 중이에요
             </p>
           )}
           {lines > 0 && (
             <p
               role="status"
-              className="mt-3 rounded-xl bg-accent/15 px-3 py-2 text-center text-sm font-bold text-accent"
+              className="mt-3 rounded-2xl bg-brand-ochre/30 px-3 py-2.5 text-center text-sm font-bold text-ink"
             >
               {lines === 1
                 ? "빙고 한 줄 완성! 이 기세로 한 줄 더 가볼까요 🎉"
@@ -431,23 +486,23 @@ export default function PlayScreen({
         />
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-white/10 bg-background/95 px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 rounded-t-3xl bg-surface-variant px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] shadow-clay-lg">
         {me && (
           <>
             <button
               onClick={() => setTab("board")}
               aria-current={tab === "board" ? "page" : undefined}
-              className={`${BTN} flex-1 ${tab === "board" ? "bg-white/15" : "text-white/60"}`}
+              className={`${TAB} ${tab === "board" ? "bg-brand-pink-hot text-ink" : "text-ink-muted"}`}
             >
-              내 빙고판
+              빙고판
             </button>
-            <label className="flex min-h-14 min-w-14 cursor-pointer items-center justify-center rounded-full bg-accent text-2xl text-black">
+            <label className="flex min-h-14 min-w-14 cursor-pointer items-center justify-center rounded-full bg-primary text-2xl text-on-primary shadow-clay transition active:scale-95">
               <span className="sr-only">미션 없이 사진 찍기</span>
               <span aria-hidden>📷</span>
               <input
                 type="file"
                 accept="image/*"
-                capture="environment"
+                capture
                 className="sr-only"
                 data-testid="free-photo"
                 onChange={(e) => {
@@ -463,23 +518,28 @@ export default function PlayScreen({
           onClick={() => setTab("album")}
           aria-current={tab === "album" ? "page" : undefined}
           data-testid="go-album"
-          className={`${BTN} flex-1 ${tab === "album" ? "bg-white/15" : "text-white/60"}`}
+          className={`${TAB} ${tab === "album" ? "bg-brand-pink-hot text-ink" : "text-ink-muted"}`}
         >
           앨범
         </button>
+        <button
+          onClick={() => setTab("notes")}
+          aria-current={tab === "notes" ? "page" : undefined}
+          data-testid="go-notes"
+          className={`${TAB} ${tab === "notes" ? "bg-brand-pink-hot text-ink" : "text-ink-muted"}`}
+        >
+          방명록
+        </button>
         {!me && (
-          <button
-            onClick={() => setAlbumOnly(false)}
-            className={`${BTN} flex-1 bg-accent text-black`}
-          >
+          <Button onClick={() => setAlbumOnly(false)} className="flex-1">
             입장하기
-          </button>
+          </Button>
         )}
       </nav>
 
       {sheetCell !== null && (
         <Sheet onClose={() => setSheetCell(null)} title={board[sheetCell]?.mission ?? "미션 없이 한 장"}>
-          <p className="text-xs text-white/60">
+          <p className="text-xs leading-relaxed text-ink-muted">
             찍으면 AI가 알아서 인증하고 캡션을 달아줘요. 타이핑은 없어요.
           </p>
           <PickButton
@@ -509,12 +569,12 @@ export default function PlayScreen({
             <img
               src={pending.preview}
               alt="방금 올린 사진"
-              className="max-h-56 w-full rounded-xl object-contain"
+              className="max-h-56 w-full rounded-2xl bg-card object-contain"
             />
           )}
           {pending.phase === "error" ? (
             <>
-              <p className="text-sm text-pop">{pending.message}</p>
+              <p className="text-sm text-error">{pending.message}</p>
               <PickButton
                 label="다시 찍기"
                 capture
@@ -524,27 +584,20 @@ export default function PlayScreen({
             </>
           ) : (
             <>
-              <p className="text-sm text-white/80">{pending.caption}</p>
+              <p className="text-sm leading-relaxed text-ink-body">{pending.caption}</p>
               {pending.verified ? (
-                <button
-                  onClick={() => setPending(null)}
-                  className={`${BTN} w-full bg-accent text-black`}
-                >
+                <Button onClick={() => setPending(null)} className="w-full">
                   빙고판으로 돌아가기
-                </button>
+                </Button>
               ) : (
                 <>
-                  <p className="text-xs text-white/60">
-                    사진은 잘 올라갔어요. 지금 다들 올리는 중이라 AI가 좀 바빠요 — 직접 누르면 칸이 바로
+                  <p className="text-xs leading-relaxed text-ink-muted">
+                    사진은 잘 올라갔어요. 지금 다들 올리는 중이라 AI가 좀 바빠요. 직접 누르면 칸이 바로
                     채워져요.
                   </p>
-                  <button
-                    disabled={busy}
-                    onClick={() => void selfCheck()}
-                    className={`${BTN} w-full bg-accent text-black`}
-                  >
+                  <Button disabled={busy} onClick={() => void selfCheck()} className="w-full">
                     이 사진으로 인증하기
-                  </button>
+                  </Button>
                   <PickButton
                     label="다시 찍기"
                     capture
@@ -557,31 +610,52 @@ export default function PlayScreen({
         </Sheet>
       )}
 
+      {/* 네컷 타임: 호스트가 시작하면 폰에 그냥 뜬다. 닫으면 다시 열 버튼만 남는다. */}
+      {me && fourcut && fourcutLive && dismissedCut !== fourcut.startedAt && (
+        <FourcutSheet
+          code={code}
+          session={fourcut}
+          onClose={() => setDismissedCut(fourcut.startedAt)}
+        />
+      )}
+
+      {me && fourcut && fourcutLive && dismissedCut === fourcut.startedAt && (
+        <button
+          onClick={() => setDismissedCut(null)}
+          className="fixed bottom-24 left-1/2 z-40 min-h-12 -translate-x-1/2 rounded-full bg-brand-pink-hot px-5 text-sm font-bold text-ink shadow-clay-lg"
+        >
+          네컷 타임 다시 열기 📸
+        </button>
+      )}
+
       {pending?.phase === "judging" && pending.cellIndex === null && (
-        <p className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pulse rounded-full bg-pop px-4 py-2 text-xs font-bold text-white">
+        <p className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pulse rounded-full bg-brand-ochre px-4 py-2 text-xs font-bold text-ink shadow-clay-lg">
           AI가 사진 보는 중이에요…
         </p>
       )}
 
       {viewing && (
         <div
-          className="fixed inset-0 z-50 flex flex-col justify-center gap-3 bg-black/95 p-4"
+          className="fixed inset-0 z-50 flex flex-col justify-center gap-3 bg-ink/95 p-4"
           onClick={() => setViewing(null)}
         >
           <img
             src={viewing.url}
             alt={viewing.caption || "파티에서 찍은 사진"}
-            className="max-h-[70vh] w-full rounded-2xl object-contain"
+            className="max-h-[70vh] w-full rounded-3xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />
-          <p className="text-center text-sm text-white/85">{viewing.caption}</p>
+          <p className="text-center text-sm text-white/90">{viewing.caption}</p>
           {viewing.mc_reaction && (
-            <p className="text-center text-xs text-accent">🎤 {viewing.mc_reaction}</p>
+            <p className="text-center text-xs text-brand-peach">🎤 {viewing.mc_reaction}</p>
           )}
-          <p className="text-center text-xs text-white/50">
+          <p className="text-center text-xs text-stage-ink-muted">
             사진을 길게 누르면 폰에 저장돼요.
           </p>
-          <button onClick={() => setViewing(null)} className={`${BTN} mx-auto bg-white/15`}>
+          <button
+            onClick={() => setViewing(null)}
+            className="mx-auto min-h-12 rounded-full bg-card-plain px-8 text-base font-semibold text-ink transition active:scale-[0.98]"
+          >
             닫기
           </button>
         </div>
@@ -590,7 +664,7 @@ export default function PlayScreen({
       {toast && (
         <p
           role="status"
-          className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-white/20 px-4 py-2 text-xs font-semibold backdrop-blur"
+          className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-surface shadow-clay-lg"
         >
           {toast}
         </p>
@@ -609,17 +683,18 @@ function Sheet({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-end bg-black/70" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-end bg-ink/50 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full space-y-3 rounded-t-3xl bg-[#16141f] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        className="w-full space-y-3 rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-clay-lg"
         onClick={(e) => e.stopPropagation()}
         data-testid="sheet"
       >
-        <h2 className="text-base font-bold">{title}</h2>
+        <span aria-hidden className="mx-auto block h-1.5 w-10 rounded-full bg-surface-variant" />
+        <h2 className="text-base font-bold tracking-tight text-ink">{title}</h2>
         {children}
-        <button onClick={onClose} className={`${BTN} w-full bg-white/10`}>
+        <Button variant="ghost" onClick={onClose} className="w-full">
           닫기
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -638,15 +713,20 @@ function PickButton({
 }) {
   return (
     <label
-      className={`flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full px-5 font-semibold ${
-        primary ? "bg-accent text-black" : "bg-white/10"
+      className={`${PILL} ${
+        primary
+          ? "bg-primary text-on-primary"
+          : "border border-hairline bg-card-plain text-ink hover:bg-surface-soft"
       }`}
     >
       {label}
+      {/* Bare `capture` opens the camera but leaves the front/back choice to
+          the phone. "environment" pins it to the rear lens, which is wrong
+          for the missions here — most of them are two people in one frame. */}
       <input
         type="file"
         accept="image/*"
-        {...(capture ? { capture: "environment" as const } : {})}
+        {...(capture ? { capture: true } : {})}
         className="sr-only"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -705,50 +785,42 @@ function JoinForm({
   }
 
   return (
-    <main className="flex flex-1 flex-col justify-center gap-5 p-6">
-      <div>
-        <p className="text-xs font-semibold tracking-widest text-accent">방 {code}</p>
-        <h1 className="mt-1 text-2xl font-black">파티에 입장하기</h1>
-        <p className="mt-1 text-sm text-white/60">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-5 p-6">
+      <div className="text-center">
+        <Logo className="text-2xl" />
+        <p className="mt-4 text-xs font-semibold tracking-widest text-brand-pink">방 {code}</p>
+        <h1 className="mt-1 text-2xl font-black tracking-tight text-ink">파티에 입장하기</h1>
+        <p className="mt-2 text-sm leading-relaxed text-ink-muted">
           이름 하나, 그리고 셀카나 자기소개 중 하나만 있으면 돼요. 그걸 보고 AI가 내 캐릭터랑 빙고판을
           만들어 줘요.
         </p>
       </div>
 
       {ended && (
-        <p className="rounded-xl bg-white/10 px-3 py-2 text-xs text-white/70">
+        <p className="rounded-2xl bg-surface-variant px-4 py-3 text-xs leading-relaxed text-ink-body">
           이미 끝난 파티예요. 대신 앨범에서 그날 사진은 볼 수 있어요.
         </p>
       )}
 
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label htmlFor="nickname" className="mb-1 block text-sm font-semibold">
-            TV에 뜰 이름
-          </label>
-          <input
-            id="nickname"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            maxLength={20}
-            autoComplete="nickname"
-            placeholder="예) 소미, 3번 테이블 형"
-            className="min-h-12 w-full rounded-xl bg-white/10 px-4 text-base outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
-
-        <div>
-          <span className="mb-1 block text-sm font-semibold">셀카 한 장 · 이것만 해도 돼요</span>
-          <div className="flex items-center gap-3">
+      <Card accentColor="var(--color-brand-peach)">
+        {/* 참고 화면 순서: 원형 아바타 → 라벨 + 입력 → 검정 알약. */}
+        <form onSubmit={submit} className="space-y-5">
+          <div className="flex flex-col items-center gap-3">
             {selfie ? (
               <img
                 src={selfie}
                 alt="선택한 셀카 미리보기"
-                className="size-16 rounded-full object-cover"
+                className="size-28 rounded-full bg-surface-variant object-cover shadow-clay ring-4 ring-card-plain"
               />
             ) : (
-              <div className="size-16 rounded-full bg-white/10" aria-hidden />
+              <div
+                className="size-28 rounded-full bg-surface-variant shadow-clay ring-4 ring-card-plain"
+                aria-hidden
+              />
             )}
+            <span className="block text-center text-xs font-semibold tracking-wide text-ink-muted">
+              셀카 한 장 · 이것만 해도 돼요
+            </span>
             <PickButton
               label={selfie ? "다시 찍기" : "셀카 찍기"}
               capture
@@ -762,40 +834,57 @@ function JoinForm({
               }}
             />
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="intro" className="mb-1 block text-sm font-semibold">
-            자기소개 세 줄 · 셀카 대신 이것만 해도 돼요
-          </label>
-          <textarea
-            id="intro"
-            value={intro}
-            onChange={(e) => setIntro(e.target.value)}
-            rows={3}
-            maxLength={300}
-            placeholder={"예) 사진 찍는 거 좋아함\n맥주보다 하이볼\n오늘 처음 온 사람"}
-            className="w-full rounded-xl bg-white/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
+          <div>
+            <label
+              htmlFor="nickname"
+              className="mb-1.5 block text-xs font-semibold tracking-wide text-ink-muted"
+            >
+              TV에 뜰 이름
+            </label>
+            <input
+              id="nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              maxLength={20}
+              autoComplete="nickname"
+              placeholder="예) 소미, 3번 테이블 형"
+              className="min-h-12 w-full rounded-2xl border border-hairline bg-card-plain px-4 text-base text-ink outline-none placeholder:text-ink-muted focus:border-ink"
+            />
+          </div>
 
-        {message && (
-          <p role="alert" className="text-sm text-pop">
-            {message}
-          </p>
-        )}
+          <div>
+            <label
+              htmlFor="intro"
+              className="mb-1.5 block text-xs font-semibold tracking-wide text-ink-muted"
+            >
+              자기소개 세 줄 · 셀카 대신 이것만 해도 돼요
+            </label>
+            <textarea
+              id="intro"
+              value={intro}
+              onChange={(e) => setIntro(e.target.value)}
+              rows={3}
+              maxLength={300}
+              placeholder={"예) 사진 찍는 거 좋아함\n맥주보다 하이볼\n오늘 처음 온 사람"}
+              className="w-full rounded-2xl border border-hairline bg-card-plain px-4 py-3 text-base text-ink outline-none placeholder:text-ink-muted focus:border-ink"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={busy || ended}
-          className={`${BTN} w-full bg-accent text-lg text-black`}
-        >
-          {busy ? "입장하는 중이에요…" : "파티 입장하기"}
-        </button>
-        <button type="button" onClick={onAlbumOnly} className={`${BTN} w-full bg-white/10`}>
-          앨범만 둘러보기
-        </button>
-      </form>
+          {message && (
+            <p role="alert" className="text-sm text-error">
+              {message}
+            </p>
+          )}
+
+          <Button type="submit" disabled={busy || ended} className="w-full text-lg">
+            {busy ? "입장하는 중이에요…" : "파티 입장하기"}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onAlbumOnly} className="w-full">
+            앨범만 둘러보기
+          </Button>
+        </form>
+      </Card>
     </main>
   );
 }
