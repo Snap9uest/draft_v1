@@ -31,14 +31,29 @@ export default function CreateRoomPage() {
     setIsCreating(true);
     
     const roomId = crypto.randomUUID();
-    const roomCode = generateRoomCode(); // unused for now but we might need it for backend payload
+    const roomCode = generateRoomCode();
     const hostToken = crypto.randomUUID();
     
     // Save token to local storage
     roomStorage.saveHostToken(roomId, hostToken);
     
-    // In a real app, we would make an API call here to save the room details
-    // with tonePreset, etc. For now, we just redirect.
+    // Mock saving the room for frontend flow testing
+    const newRoom = {
+      id: roomId,
+      code: roomCode,
+      hostToken,
+      tonePreset: selectedTone,
+      rewardToggle: false,
+      status: 'lobby',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    if (typeof window !== 'undefined') {
+      const storedRooms = localStorage.getItem('snapquest_rooms') || '[]';
+      const rooms = JSON.parse(storedRooms);
+      rooms.push(newRoom);
+      localStorage.setItem('snapquest_rooms', JSON.stringify(rooms));
+    }
     
     router.push(`/room/${roomId}?role=host&token=${hostToken}`);
   };

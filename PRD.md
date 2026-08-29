@@ -35,7 +35,7 @@
     - 생성 완료 후 호스트를 `/room/[id]?role=host&token=[hostToken]`으로 자동 이동
   - *Done when*: 방 만들기 버튼 클릭 시 정상적으로 방이 생성되고 호스트 페이지로 라우팅됨
 
-- [ ] **Task 3: TV 대기/로비 화면 QR 및 방코드 렌더러 (`?role=tv`)**
+- [x] **Task 3: TV 대기/로비 화면 QR 및 방코드 렌더러 (`?role=tv`)**
   - `components/room/TvLobbyView.tsx`:
     - 대형 스크린에 최적화된 고화질 QR 코드 및 6자리 입장 코드 표시
     - 게스트 입장 URL 안내 (`/join/[code]` 또는 `/room/[id]`)
