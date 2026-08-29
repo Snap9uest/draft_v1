@@ -27,3 +27,12 @@ Next Task: Task 1 - F9 방 및 파티 생애주기 데이터 타입 & 상태 모
   - `lib/room-storage.ts` 생성: 로컬 스토리지를 활용한 호스트 토큰 관리 유틸리티 추가
   - `npm run build`로 타입 에러 및 빌드 성공 확인
 - **다음 태스크**: Task 2 - 초간단 방 생성 플로우 UI 구현 (`/create` 또는 메인 랜딩)
+
+=== [2026-08-29] Task 2 Completed ===
+- **작업 내역**:
+  - `app/create/page.tsx` 생성: 초간단 방 생성 플로우 UI 구현
+  - 클릭 2~3회로 톤 프리셋 선택 및 방 생성 로직 추가 (`crypto.randomUUID`, `Math.random` 활용)
+  - 방 생성 시 고유 `roomId`, `code`, `hostToken` 자동 생성 후 `roomStorage.saveHostToken`으로 로컬 스토리지에 토큰 저장
+  - 생성 후 호스트 전용 페이지(`/room/[id]?role=host&token=[hostToken]`)로 자동 이동 처리
+  - `npm run build`로 타입 에러 없이 정상 빌드 확인
+- **다음 태스크**: Task 3 - TV 대기/로비 화면 QR 및 방코드 렌더러 (`?role=tv`)

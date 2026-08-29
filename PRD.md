@@ -28,7 +28,7 @@
   - `lib/room-storage.ts`: 호스트 토큰 로컬스토리지 저장 및 검증 유틸리티
   - *Done when*: 타입 에러 없이 import 가능 및 TypeScript 컴파일 성공
 
-- [ ] **Task 2: 초간단 방 생성 플로우 UI 구현 (`/create` 또는 메인 랜딩)**
+- [x] **Task 2: 초간단 방 생성 플로우 UI 구현 (`/create` 또는 메인 랜딩)**
   - `components/room/CreateRoomModal.tsx` 또는 `app/create/page.tsx`:
     - 클릭 2~3회로 방 생성 (방 이름/톤 프리셋 선택 → 즉시 방 생성 완료)
     - 방 생성 시 고유 `roomId`, `code`, `hostToken` 자동 생성
