@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { PARTICIPANT_COLS, serverDb } from "@/lib/db/client";
-import type { BoardCell } from "@/lib/db/types";
+import { completedLines, type BoardCell } from "@/lib/db/types";
 import { fail, getRoom, MAX_IMAGE_CHARS, str, uploadImage } from "@/lib/db/server";
-import { isLocked, parseFrame, unlockState } from "./frames";
+import { isLocked, parseFrame } from "./frames";
+import { unlockState } from "./rules";
 
 export const maxDuration = 60;
 
@@ -51,7 +52,8 @@ export async function POST(request: Request) {
       .select("id", { count: "exact", head: true })
       .eq("room_id", room.id)
       .eq("invited_by", me.id as string);
-    const unlock = unlockState((me.board ?? []) as BoardCell[], count ?? 0);
+    const board = (Array.isArray(me.board) ? me.board : []) as BoardCell[];
+    const unlock = unlockState(completedLines(board), count ?? 0);
 
     if (isLocked(frame) && !unlock.unlocked) {
       return NextResponse.json(

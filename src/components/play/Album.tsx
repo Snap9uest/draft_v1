@@ -52,6 +52,7 @@ export default function Album({
             <button
               key={s}
               aria-pressed={scope === s}
+              data-testid={`album-${s}`}
               onClick={() => setScope(s)}
               className={`min-h-11 flex-1 rounded-full px-3 text-sm font-semibold transition ${
                 scope === s ? "bg-accent text-black" : "text-white/70"
@@ -70,8 +71,8 @@ export default function Album({
       </div>
 
       <p className="rounded-xl bg-white/5 px-3 py-2 text-xs leading-relaxed text-white/60">
-        사진을 <b className="text-white/90">길게 누르면</b> 폰에 저장돼요. 무료 보관은{" "}
-        {daysLeft > 0 ? `D-${daysLeft}` : "오늘까지"}예요.
+        사진을 <b className="text-white/90">길게 누르면</b> 폰에 저장돼요. 앨범은{" "}
+        {daysLeft > 0 ? `${daysLeft}일 뒤에` : "오늘"} 문을 닫으니, 마음에 드는 건 미리 챙겨 두세요.
       </p>
 
       {scope === "mine" && me && <MyCard me={me} />}
@@ -85,7 +86,7 @@ export default function Album({
       ) : (
         <ul className="grid grid-cols-2 gap-2">
           {shown.map((photo) => (
-            <li key={photo.id}>
+            <li key={photo.id} data-testid="album-item">
               <button
                 onClick={() => onOpen(photo)}
                 className="block w-full overflow-hidden rounded-xl bg-white/10 text-left"

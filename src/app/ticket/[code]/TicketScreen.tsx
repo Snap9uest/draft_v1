@@ -14,20 +14,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  clearPick,
   DEFAULT_TICKET_FRAME,
   FRAME_LABEL,
   isLocked,
-  placePick,
   TICKET_FRAMES,
-  unlockState,
   type TicketFrame,
 } from "@/app/api/ticket/frames";
+import { clearPick, placePick, unlockState } from "@/app/api/ticket/rules";
 import { H, LAYOUT, W } from "@/lib/canvas/constants";
 import type { TicketResult } from "@/lib/canvas/ticket";
 import { browserDb } from "@/lib/db/client";
 import { getMyParticipant, getRoomPhotos, getRoomWithParticipants } from "@/lib/db/queries";
-import type { Participant, Photo, Room } from "@/lib/db/types";
+import { completedLines, type Participant, type Photo, type Room } from "@/lib/db/types";
 import { saveImage } from "@/lib/download";
 import { RETENTION_NOTICE, retentionLabel } from "@/lib/retention";
 import { getSessionToken } from "@/lib/session";
@@ -151,7 +149,7 @@ export default function TicketScreen({ code }: { code: string }) {
     () =>
       data
         ? unlockState(
-            data.me.board,
+            completedLines(Array.isArray(data.me.board) ? data.me.board : []),
             data.participants.filter((p) => p.invited_by === data.me.id).length,
           )
         : null,

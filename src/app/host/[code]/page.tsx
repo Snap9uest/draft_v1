@@ -13,10 +13,10 @@ const TONES = ["친목", "동아리", "워크샵", "파티"];
 const NO_SUBSCRIBE = () => () => {};
 
 const STATUS_LABEL: Record<RoomStatus, string> = {
-  lobby: "대기 중",
-  live: "진행 중",
-  award: "시상 중",
-  ended: "종료됨",
+  lobby: "입장 받는 중",
+  live: "파티 진행 중",
+  award: "칭호 발표 중",
+  ended: "파티 끝남",
 };
 
 async function post(url: string, body: unknown) {
@@ -240,16 +240,16 @@ export default function HostPage({
         </div>
         <div className="flex-1 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-900">
           <p className="text-2xl font-bold">{verified}</p>
-          <p className="text-xs text-neutral-500">인증 사진</p>
+          <p className="text-xs text-neutral-500">인증된 미션 사진</p>
         </div>
       </section>
 
       {!hostToken && (
         <section className="rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold">지금은 구경만 할 수 있어요</p>
+          <p className="font-semibold">지금은 보기만 할 수 있어요</p>
           <p className="mt-1 text-neutral-500">
-            이 기기에는 진행 권한이 없어요. 방을 만든 기기에서 열거나, 아래에 진행 코드를
-            붙여넣어 주세요.
+            방을 만든 기기에서 이 주소를 열면 바로 진행할 수 있어요. 진행을 넘겨받는
+            거라면, 그 기기에서 받은 진행 코드를 아래에 붙여넣어 주세요.
           </p>
           <form
             className="mt-3 flex gap-2"
@@ -269,10 +269,10 @@ export default function HostPage({
               id="host-token"
               name="token"
               className="min-h-11 flex-1 rounded-lg border border-neutral-300 px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-              placeholder="진행 코드 붙여넣기"
+              placeholder="넘겨받은 진행 코드"
             />
             <button type="submit" className="min-h-11 rounded-lg bg-neutral-900 px-4 text-sm text-white dark:bg-white dark:text-neutral-900">
-              권한 켜기
+              이 기기로 진행하기
             </button>
           </form>
         </section>
@@ -291,12 +291,13 @@ export default function HostPage({
 
       <fieldset disabled={!hostToken || busy !== ""} className="contents">
         <section>
-          <h2 className="mb-2 text-sm font-semibold">미션 톤</h2>
+          <h2 className="mb-2 text-sm font-semibold">미션 분위기</h2>
           <div className="grid grid-cols-4 gap-2">
             {TONES.map((tone) => (
               <button
                 key={tone}
                 type="button"
+                aria-label={`미션 분위기 고르기 — ${tone}`}
                 aria-pressed={room.tone_preset === tone}
                 className={`min-h-12 rounded-xl text-sm ${
                   room.tone_preset === tone
@@ -310,15 +311,15 @@ export default function HostPage({
             ))}
           </div>
           <p className="mt-2 text-xs text-neutral-500">
-            지금 고른 톤은 다음에 들어오는 사람의 미션부터 적용돼요.
+            지금 고른 분위기로 AI가 미션을 골라요. 이미 들어온 사람의 빙고판은 그대로예요.
           </p>
         </section>
 
         <section className="flex items-center justify-between rounded-xl bg-neutral-100 p-4 dark:bg-neutral-900">
           <label htmlFor="reward" className="text-sm">
-            <span className="font-semibold">현장 리워드 안내</span>
+            <span className="font-semibold">현장 리워드</span>
             <span className="block text-xs text-neutral-500">
-              켜면 게스트 폰에 리워드 안내가 떠요.
+              오늘 상품이 걸려 있으면 켜 두세요.
             </span>
           </label>
           <input
@@ -331,7 +332,7 @@ export default function HostPage({
         </section>
 
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold">진행</h2>
+          <h2 className="text-sm font-semibold">파티 진행</h2>
           {room.status === "lobby" && (
             <button
               type="button"
@@ -369,18 +370,21 @@ export default function HostPage({
               })
             }
           >
-            {busy === "award" ? "AI가 칭호를 고르는 중이에요…" : "칭호 발표하기"}
+            {busy === "award" ? "AI가 칭호를 고르는 중이에요…" : "TV에 칭호 발표하기"}
           </button>
           {confirmEnd ? (
             <div className="rounded-xl border border-red-500/60 p-3">
-              <p className="text-sm">파티를 끝낼까요? 새 입장과 인증이 막혀요.</p>
+              <p className="text-sm">
+                파티를 끝낼까요? 한 번 끝내면 되돌릴 수 없어요. 새로 들어오거나 사진을
+                올리는 건 막히고, 앨범과 네컷 티켓은 그대로 남아요.
+              </p>
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
                   className="min-h-12 flex-1 rounded-xl bg-neutral-100 disabled:opacity-40 dark:bg-neutral-800"
                   onClick={() => setConfirmEnd(false)}
                 >
-                  그냥 두기
+                  계속 진행하기
                 </button>
                 <button
                   type="button"
@@ -390,7 +394,7 @@ export default function HostPage({
                     setConfirmEnd(false);
                   }}
                 >
-                  네, 끝낼게요
+                  네, 파티 끝낼게요
                 </button>
               </div>
             </div>
@@ -406,10 +410,15 @@ export default function HostPage({
         </section>
 
         <section>
-          <h2 className="mb-2 text-sm font-semibold">사진 {photos.length}장</h2>
+          <h2 className="mb-2 text-sm font-semibold">올라온 사진 {photos.length}장</h2>
           {photos.length === 0 ? (
             <p className="text-sm text-neutral-500">아직 첫 사진을 기다리는 중이에요 📸</p>
           ) : (
+            <>
+            <p className="mb-2 text-xs text-neutral-500">
+              큰 화면에 띄우고 싶지 않은 사진은 TV에서 내려 주세요. 내려도 사진이 지워지지는
+              않고, 언제든 다시 띄울 수 있어요.
+            </p>
             <ul className="grid grid-cols-2 gap-3">
               {photos.map((photo) => {
                 const owner = participants.find((p) => p.id === photo.owner_id);
@@ -427,18 +436,19 @@ export default function HostPage({
                       <button
                         type="button"
                         aria-label={`${owner?.nickname ?? "누군가"}님의 사진 ${
-                          photo.hidden ? "TV에 다시 띄우기" : "TV에서 숨기기"
+                          photo.hidden ? "TV에 다시 띄우기" : "TV에서 내리기"
                         }`}
                         className="mt-1 min-h-11 w-full rounded-lg bg-neutral-200 text-xs disabled:opacity-40 dark:bg-neutral-800"
                         onClick={() => toggleHidden(photo)}
                       >
-                        {photo.hidden ? "다시 띄우기" : "숨기기"}
+                        {photo.hidden ? "TV에 다시 띄우기" : "TV에서 내리기"}
                       </button>
                     </div>
                   </li>
                 );
               })}
             </ul>
+            </>
           )}
         </section>
       </fieldset>

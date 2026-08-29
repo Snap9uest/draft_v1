@@ -293,14 +293,14 @@ export default function PlayScreen({
             </p>
           </div>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-            {daysLeft > 0 ? `보관 D-${daysLeft}` : "보관 만료"}
+            {daysLeft > 0 ? `앨범 D-${daysLeft}` : "앨범 마감"}
           </span>
         </div>
         {daysLeft <= 3 && (
           <p className="mt-2 rounded-xl bg-pop/20 px-3 py-2 text-xs leading-relaxed text-pop">
             {daysLeft > 0
-              ? `무료 보관이 D-${daysLeft} 남았어요. 사진을 길게 눌러 저장해 두세요.`
-              : "무료 보관 기간이 끝났어요. 남은 사진을 지금 저장해 주세요."}
+              ? `앨범은 ${daysLeft}일 뒤에 문을 닫아요. 마음에 드는 사진은 길게 눌러 저장해 두세요.`
+              : "앨범은 오늘 문을 닫아요. 남은 사진은 지금 길게 눌러 저장해 두세요."}
           </p>
         )}
       </header>
@@ -366,6 +366,8 @@ export default function PlayScreen({
                     aria-label={`${i + 1}번 미션 ${cell?.mission ?? "준비 중"}. ${
                       done ? "인증 완료, 사진 보기" : "사진 올리기"
                     }`}
+                    data-testid={`cell-${i}`}
+                    data-status={done ? "done" : judging ? "judging" : "todo"}
                     className={`relative flex aspect-square w-full flex-col items-center justify-center overflow-hidden rounded-xl p-1.5 text-center text-[11px] leading-tight ${
                       done
                         ? "bg-accent/20 ring-2 ring-accent"
@@ -394,7 +396,7 @@ export default function PlayScreen({
                     )}
                     {judging && (
                       <span className="absolute bottom-1 z-10 animate-pulse rounded-full bg-pop px-2 py-0.5 text-[10px] font-bold text-white">
-                        인증 중
+                        AI가 보는 중
                       </span>
                     )}
                   </button>
@@ -408,8 +410,13 @@ export default function PlayScreen({
             </p>
           )}
           {lines > 0 && (
-            <p className="mt-3 rounded-xl bg-accent/15 px-3 py-2 text-center text-sm font-bold text-accent">
-              🎉 {lines}줄 빙고 달성!
+            <p
+              role="status"
+              className="mt-3 rounded-xl bg-accent/15 px-3 py-2 text-center text-sm font-bold text-accent"
+            >
+              {lines === 1
+                ? "빙고 한 줄 완성! 이 기세로 한 줄 더 가볼까요 🎉"
+                : `빙고 ${lines}줄 완성! 오늘 제일 잘 노는 사람 🎉`}
             </p>
           )}
         </section>
@@ -442,6 +449,7 @@ export default function PlayScreen({
                 accept="image/*"
                 capture="environment"
                 className="sr-only"
+                data-testid="free-photo"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   e.target.value = "";
@@ -454,6 +462,7 @@ export default function PlayScreen({
         <button
           onClick={() => setTab("album")}
           aria-current={tab === "album" ? "page" : undefined}
+          data-testid="go-album"
           className={`${BTN} flex-1 ${tab === "album" ? "bg-white/15" : "text-white/60"}`}
         >
           앨범
@@ -490,7 +499,9 @@ export default function PlayScreen({
             pending.phase === "error"
               ? "사진이 안 올라갔어요"
               : pending.verified
-                ? "인증 완료!"
+                ? pending.cellIndex === null
+                  ? "앨범에 올렸어요!"
+                  : "인증 통과! 칸 채웠어요"
                 : "한 번만 확인해 주세요"
           }
         >
@@ -524,7 +535,8 @@ export default function PlayScreen({
               ) : (
                 <>
                   <p className="text-xs text-white/60">
-                    사진은 잘 올라갔어요. 직접 인증하면 칸이 바로 채워져요.
+                    사진은 잘 올라갔어요. 지금 다들 올리는 중이라 AI가 좀 바빠요 — 직접 누르면 칸이 바로
+                    채워져요.
                   </p>
                   <button
                     disabled={busy}
@@ -547,7 +559,7 @@ export default function PlayScreen({
 
       {pending?.phase === "judging" && pending.cellIndex === null && (
         <p className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pulse rounded-full bg-pop px-4 py-2 text-xs font-bold text-white">
-          사진 올리는 중이에요…
+          AI가 사진 보는 중이에요…
         </p>
       )}
 
@@ -601,6 +613,7 @@ function Sheet({
       <div
         className="w-full space-y-3 rounded-t-3xl bg-[#16141f] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
+        data-testid="sheet"
       >
         <h2 className="text-base font-bold">{title}</h2>
         {children}
@@ -671,7 +684,7 @@ function JoinForm({
     const name = nickname.trim();
     if (!name) return setMessage("TV에 뜰 이름을 정해 주세요.");
     if (!selfie && !intro.trim()) {
-      return setMessage("셀카 1장 또는 자기소개를 넣어야 캐릭터를 만들 수 있어요.");
+      return setMessage("셀카 한 장이나 자기소개, 둘 중 하나만 넣어 주세요. 그걸로 캐릭터를 만들어요.");
     }
     setMessage(null);
     setBusy(true);
@@ -697,7 +710,8 @@ function JoinForm({
         <p className="text-xs font-semibold tracking-widest text-accent">방 {code}</p>
         <h1 className="mt-1 text-2xl font-black">파티에 입장하기</h1>
         <p className="mt-1 text-sm text-white/60">
-          이름과 셀카(또는 자기소개) 하나면 끝이에요. 캐릭터와 빙고판은 들어가면 AI가 만들어 줘요.
+          이름 하나, 그리고 셀카나 자기소개 중 하나만 있으면 돼요. 그걸 보고 AI가 내 캐릭터랑 빙고판을
+          만들어 줘요.
         </p>
       </div>
 
@@ -710,7 +724,7 @@ function JoinForm({
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label htmlFor="nickname" className="mb-1 block text-sm font-semibold">
-            닉네임
+            TV에 뜰 이름
           </label>
           <input
             id="nickname"
@@ -718,13 +732,13 @@ function JoinForm({
             onChange={(e) => setNickname(e.target.value)}
             maxLength={20}
             autoComplete="nickname"
-            placeholder="TV에 뜰 이름"
+            placeholder="예) 소미, 3번 테이블 형"
             className="min-h-12 w-full rounded-xl bg-white/10 px-4 text-base outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 
         <div>
-          <span className="mb-1 block text-sm font-semibold">셀카 (선택)</span>
+          <span className="mb-1 block text-sm font-semibold">셀카 한 장 · 이것만 해도 돼요</span>
           <div className="flex items-center gap-3">
             {selfie ? (
               <img
@@ -752,7 +766,7 @@ function JoinForm({
 
         <div>
           <label htmlFor="intro" className="mb-1 block text-sm font-semibold">
-            자기소개 3줄 (셀카 대신 가능)
+            자기소개 세 줄 · 셀카 대신 이것만 해도 돼요
           </label>
           <textarea
             id="intro"

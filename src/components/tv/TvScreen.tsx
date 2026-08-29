@@ -16,19 +16,33 @@ type Data = {
 };
 
 const MC_INTROS = [
-  "{n}님 등장! 오늘 파티의 주인공이 될지도? ✨",
-  "반가워요 {n}님, 빙고판 준비 완료 🎯",
-  "{n}님이 파티에 합류했어요 🎉",
-  "{n}님, 카메라 준비되셨나요? 📸",
-  "{n}님 등장에 분위기가 확 살아나요 🔥",
+  "{n}님 등장! 오늘 판이 좀 커지는데요 ✨",
+  "{n}님 어서 오세요. 빙고판은 벌써 깔아뒀어요 🎯",
+  "{n}님 합류! 반가운 얼굴이 하나 늘었어요 🎉",
+  "{n}님, 카메라부터 켜 두세요 📸",
+  "{n}님 들어오니까 분위기가 확 사네요 🔥",
+  "{n}님은 어떤 미션을 받았을까요? 👀",
+  "{n}님 도착. 이제 진짜 시작이에요 🚀",
+  "{n}님, 오늘 주인공 자리 노려볼까요? 🏆",
 ];
 
 const MC_REACTIONS = [
-  "{n}님의 미션 인증! 대단해요 🔥",
-  "와, {n}님 역시 센스쟁이 👏",
-  "{n}님이 빙고판을 채워가고 있어요 🎯",
-  "{n}님, 이 사진 진짜 좋은데요?! 📸",
-  "오늘의 MVP 후보, {n}님 🏆",
+  "{n}님, 한 칸 채웠어요 🎯",
+  "와 {n}님, 이건 좀 잘 찍었는데요 📸",
+  "{n}님 미션 성공! 다음 칸도 가볼까요 🔥",
+  "{n}님 사진 올라왔어요. 다들 보세요 👀",
+  "오늘의 베스트샷 후보, {n}님 🏆",
+  "{n}님 이 표정은 반칙이죠 😂",
+  "{n}님 손 빠르네요. 벌써 한 장 ⚡",
+  "{n}님 사진은 앨범에도 바로 담겼어요 🖼️",
+];
+
+/** 사진이 아직 없을 때 돌려 쓰는 초대 멘트. */
+const WALL_NUDGES = [
+  "첫 사진 올리는 사람이 오늘의 시작이에요 📸",
+  "지금 올리면 이 화면 제일 큰 자리를 차지해요 ✨",
+  "미션은 사람마다 달라요. 내 폰부터 확인해 보세요 🎯",
+  "제일 쉬워 보이는 미션 하나부터 찍어볼까요 👀",
 ];
 
 /** 참가자가 0명일 때 로비/포토월을 채우는 예시 미션. */
@@ -281,7 +295,7 @@ function Lobby({ participants, tick }: { participants: Participant[]; tick: numb
       <>
         <Center>
           <p className="text-[clamp(2rem,4vw,4.5rem)] font-black">
-            첫 참가자를 기다리는 중…
+            제일 먼저 들어올 사람?
           </p>
           <div className="flex gap-[2vw]">
             {SAMPLE_MISSIONS.slice(0, 5).map((m, i) => (
@@ -293,18 +307,23 @@ function Lobby({ participants, tick }: { participants: Participant[]; tick: numb
             ))}
           </div>
           <p className="text-[clamp(1.25rem,2vw,2.5rem)] text-white/60">
-            폰으로 QR을 찍고 닉네임만 넣으면 바로 시작 — 설치도 로그인도 없어요
+            호스트 폰의 QR을 찍거나, 위에 뜬 코드 여섯 자를 넣으면 끝 — 설치도 로그인도 없어요
           </p>
         </Center>
-        <McBanner text="곧 시작해요! 방 코드 찍고 들어오세요 🎉" />
+        <McBanner text="폰 열고 QR 한 번이면 바로 파티예요 🎉" />
       </>
     );
   }
 
   const spotlight = participants[tick % participants.length];
-  const line = spotlight.intro
+  const intro = spotlight.intro
     ? `${spotlight.nickname} — “${spotlight.intro}”`
     : pick(MC_INTROS, spotlight.id, spotlight.nickname);
+  // 아직 서넛뿐이면 한 번 걸러 한 번은 "더 들어오세요"를 띄운다.
+  const line =
+    participants.length < 3 && tick % 2
+      ? "아직 자리 넉넉해요. QR 찍고 들어오세요 🎉"
+      : intro;
 
   return (
     <>
@@ -376,12 +395,11 @@ function PhotoWall({
                 </p>
                 <p className="text-[clamp(.75rem,1vw,1.3rem)] text-white/70">
                   {nameOf(photo.owner_id)}
-                  {photo.verify_status === "self_check" ? " · 직접 인증" : ""}
                 </p>
               </figcaption>
               {isNew && (
                 <span className="absolute left-[1vw] top-[1vh] rounded-full bg-yellow-400 px-[1vw] py-[0.6vh] text-[clamp(.75rem,1vw,1.3rem)] font-black text-black">
-                  NEW
+                  방금 도착
                 </span>
               )}
             </figure>
@@ -405,23 +423,17 @@ function WaitingWall({
       <Center>
         <div className="flex max-w-2xl flex-col items-center gap-6 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <span className="text-6xl animate-bounce">📸</span>
-          <h2 className="text-3xl font-extrabold text-white">첫 사진을 기다리는 중이에요</h2>
+          <h2 className="text-3xl font-extrabold text-white">
+            먼저 올린 사진이 여기 제일 크게 떠요
+          </h2>
           <p className="text-xl leading-relaxed text-white/70">
-            폰에 깔린 3×3 빙고판에서 미션을 하나 골라 찍어보세요.
+            폰에 깔린 3×3 미션 중에 제일 쉬운 걸로 하나 찍어보세요.
             <br />
-            올리는 순간 이 화면에 바로 떠요 ✨
+            올리자마자 이 화면에 떠요 ✨
           </p>
         </div>
       </Center>
-      <McBanner
-        text={
-          [
-            "첫 사진의 주인공은 누구일까요? 지금 찍으러 가요 📸",
-            "사진이 올라오면 바로 이 화면에 떠요 ✨",
-            "미션은 각자 다르게 깔려요. 내 폰을 확인해 보세요 🎯",
-          ][tick % 3]
-        }
-      />
+      <McBanner text={WALL_NUDGES[tick % WALL_NUDGES.length]} />
     </>
   );
 }
@@ -458,7 +470,7 @@ function Award({
             {ended ? "파티가 끝났어요 🎊" : "AI가 오늘의 칭호를 고르는 중이에요"}
           </p>
           <p className="text-[clamp(1.25rem,2vw,2.5rem)] text-white/60">
-            잠시 후 오늘의 주인공을 발표해요
+            오늘 올라온 사진을 전부 다시 보고, 한 명씩 칭호를 붙이는 중이에요
           </p>
         </Center>
         <McBanner text="두구두구두구… 🥁" />
@@ -478,7 +490,7 @@ function Award({
         <Avatar p={star} size="size-[clamp(120px,14vw,280px)]" />
         <div className="min-w-0">
           <p className="text-[clamp(1.1rem,1.8vw,2.2rem)] text-white/60">
-            {ended ? "오늘의 칭호" : "칭호 발표"}
+            {ended ? "오늘의 칭호" : "방금 정해진 칭호 🥁"}
           </p>
           <p className="text-[clamp(2.2rem,5vw,6rem)] font-black leading-tight text-amber-300">
             {star.title}
@@ -493,7 +505,7 @@ function Award({
       <div className="grid min-h-0 flex-1 grid-cols-[1fr_1.1fr] gap-[2vw]">
         <section className="min-h-0 overflow-hidden">
           <h2 className="mb-[1vh] text-[clamp(1.1rem,1.6vw,2rem)] text-white/50">
-            전체 칭호
+            모두의 칭호
           </h2>
           <ul className="grid grid-cols-2 gap-[1vw]">
             {titled.slice(0, 10).map((p) => (

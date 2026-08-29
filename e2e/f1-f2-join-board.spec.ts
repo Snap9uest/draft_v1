@@ -36,14 +36,20 @@ const BANNED = [
   "갈아입",
 ];
 
-/** 빙고 칸의 aria-label(`3번 미션: …`)에서 미션 문구만 뽑는다. */
-async function missions(page: Page): Promise<string[]> {
-  const cells = page.getByRole("button", { name: /^[1-9]번 미션:/ });
-  await expect(cells).toHaveCount(9);
-  const labels = await cells.evaluateAll((els) =>
-    els.map((el) => el.getAttribute("aria-label") ?? ""),
-  );
-  return labels.map((l) => l.replace(/^[1-9]번 미션: /, "").replace(/ \(완료\)$/, ""));
+/**
+ * 빙고 칸 9개. 접근명은 `3번 미션 <문구>. 사진 올리기` 꼴이라 번호 접두사만 잡는다 —
+ * 뒤쪽 안내 문구는 자주 바뀌므로 걸지 않는다.
+ */
+const cells = (page: Page) => page.getByRole("button", { name: /^\d+번 미션/ });
+
+/**
+ * 칸의 접근명을 그대로 돌려준다. 미션 문구만 잘라내지 않는 건 접두·접미 보일러플레이트가
+ * 두 참가자에게 동일해서 비교에도, 금칙어 검사에도 영향이 없기 때문이다.
+ */
+async function cellLabels(page: Page): Promise<string[]> {
+  const board = cells(page);
+  await expect(board).toHaveCount(9);
+  return board.evaluateAll((els) => els.map((el) => el.getAttribute("aria-label") ?? ""));
 }
 
 /** 새 브라우저 컨텍스트로 폼을 채워 실제 입장시킨다(세션이 서로 섞이지 않는다). */
@@ -57,7 +63,7 @@ async function joinViaUi(
   await page.goto(`/play/${code}`);
   await page.getByLabel("닉네임").fill(nickname);
   await page.getByLabel(/자기소개/).fill(intro);
-  await page.getByRole("button", { name: "입장하기" }).click();
+  await page.getByRole("button", { name: /입장/ }).click();
   return page;
 }
 
@@ -66,11 +72,11 @@ test("세션 없이 열면 로그인 없이 입장 폼이 뜬다", async ({ page
   expect(res?.status()).toBe(200);
 
   await expect(page.getByLabel("닉네임")).toBeVisible();
-  await expect(page.getByRole("button", { name: "입장하기" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /입장/ })).toBeVisible();
   // 로그인 벽으로 튕기지 않는다.
   expect(page.url()).toContain(`/play/${room.code}`);
   // 아직 판은 없다.
-  await expect(page.getByRole("button", { name: /^[1-9]번 미션:/ })).toHaveCount(0);
+  await expect(cells(page)).toHaveCount(0);
 });
 
 test("입장 제출은 캐릭터 생성을 기다리지 않고, 새로고침해도 세션이 남는다", async ({
@@ -86,23 +92,21 @@ test("입장 제출은 캐릭터 생성을 기다리지 않고, 새로고침해�
   await page.getByLabel("닉네임").fill("소미");
   await page.getByLabel(/자기소개/).fill("사진 찍는 거 좋아함\n맥주보다 하이볼");
 
-  const cells = page.getByRole("button", { name: /^[1-9]번 미션:/ });
   const started = Date.now();
-  await page.getByRole("button", { name: "입장하기" }).click();
-  await expect(cells.first()).toBeVisible();
+  await page.getByRole("button", { name: /입장/ }).click();
+  await expect(cells(page).first()).toBeVisible();
   const elapsed = Date.now() - started;
 
   // F1-2: AI 아바타·AI 판 생성은 after() 로 뒤에서 돈다. 이걸 기다렸다면 여기서 터진다.
   expect(elapsed, `입장 제출 → 빙고판 노출 ${elapsed}ms`).toBeLessThan(NON_BLOCKING_MS);
   // F2: 3×3.
-  await expect(cells).toHaveCount(9);
+  await expect(cells(page)).toHaveCount(9);
   // F1-3: 생성 전에도 프리셋 아바타가 이미 붙어 있다.
   await expect(page.getByRole("img", { name: "소미의 캐릭터" })).toBeVisible();
 
   // F1 재접속: 로컬 토큰으로 복원 — 폼으로 되돌아가지 않는다.
   await page.reload();
-  await expect(cells).toHaveCount(9);
-  await expect(page.getByRole("button", { name: "입장하기" })).toHaveCount(0);
+  await expect(cells(page)).toHaveCount(9);
   await expect(page.getByLabel("닉네임")).toHaveCount(0);
 });
 
@@ -112,7 +116,7 @@ test("참가자 둘은 서로 다른 9칸을 받는다", async ({ browser, room 
   const a = await joinViaUi(browser, room.code, "가온", "보드게임 좋아함\n술은 못 마심");
   const b = await joinViaUi(browser, room.code, "나린", "사진 찍는 게 취미\n첫 참석");
 
-  const [ma, mb] = [await missions(a), await missions(b)];
+  const [ma, mb] = [await cellLabels(a), await cellLabels(b)];
   // AI 가 죽어 폴백 풀로 떨어져도 셔플이 달라 판은 갈려야 한다. 전원 동일 판이면 F2-1 위반.
   expect(ma, `가온: ${ma.join(" / ")}\n나린: ${mb.join(" / ")}`).not.toEqual(mb);
 
@@ -136,7 +140,7 @@ test("미션 문구에 도촬류 표현이 없다", async ({ page, request, room
   expect(generated.missions).toHaveLength(9);
 
   for (const [source, list] of [
-    ["렌더된 판", await missions(page)],
+    ["렌더된 판", await cellLabels(page)],
     [`AI 생성(isFallback=${generated.isFallback})`, generated.missions],
   ] as const) {
     const hits = list.flatMap((m) =>

@@ -8,6 +8,32 @@ function warn(where: string, error: unknown) {
   console.error(`[SnapQuest] ${where} 조회 실패:`, error);
 }
 
+/**
+ * The same read through the server route, which holds the service role.
+ *
+ * A direct read can fail for reasons that have nothing to do with the room
+ * existing — a column grant changed under a tab that is still running older
+ * JS, for one — and answering "그런 방 없어요" to a room that is plainly
+ * there is the worst thing this screen can do. So a failed read asks the
+ * server instead of concluding the room is gone.
+ */
+async function fetchRoomFromApi(
+  code: string,
+): Promise<{ room: Room; participants: Participant[] } | null> {
+  try {
+    const res = await fetch(`/api/room/${encodeURIComponent(code.toUpperCase())}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      room?: Room;
+      participants?: Participant[];
+    };
+    return data.room ? { room: data.room, participants: data.participants ?? [] } : null;
+  } catch (error) {
+    warn("방(서버 경유)", error);
+    return null;
+  }
+}
+
 export async function getRoomWithParticipants(
   code: string,
 ): Promise<{ room: Room; participants: Participant[] } | null> {
@@ -33,25 +59,7 @@ export async function getRoomWithParticipants(
     };
   } catch (error) {
     warn("방", error);
-    // Supabase 키가 없거나 연결 실패 시 DEMO01 방 안전 폴백 제공
-    if (code.toUpperCase() === "DEMO01" || code.toUpperCase() === "DEMO") {
-      return {
-        room: {
-          id: "demo-room-id",
-          code: "DEMO01",
-          tone_preset: "동아리",
-          reward_on: true,
-          status: "live",
-          state: {},
-          is_demo: true,
-          created_at: new Date().toISOString(),
-          ended_at: null,
-          expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
-        } as Room,
-        participants: [],
-      };
-    }
-    return null;
+    return fetchRoomFromApi(code);
   }
 }
 

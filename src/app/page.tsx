@@ -11,18 +11,18 @@ const DEMO_KEY = "snapquest.demo";
 const PITCH = [
   {
     n: "01",
-    head: "각자 다른 빙고판",
-    body: "AI가 서로를 엮어서 한 사람 앞에 한 판씩, 다 다른 3×3 사진 미션을 깔아줘요.",
+    head: "내 폰에만 뜨는 미션 9칸",
+    body: "AI가 참가자들을 서로 엮어서 나한테만 맞는 사진 미션을 깔아줘요. 옆 사람 판이랑 한 칸도 안 겹쳐요.",
   },
   {
     n: "02",
-    head: "찍으면 알아서 인증",
-    body: "사진만 올리면 AI가 알아서 인증하고 캡션까지 붙여 큰 화면에 띄워요. 타이핑은 없어요.",
+    head: "찍어서 올리면 그걸로 끝",
+    body: "사진 한 장이면 AI가 알아서 칸을 채우고 캡션까지 붙여 큰 화면에 띄워요. 타이핑할 일은 없어요.",
   },
   {
     n: "03",
-    head: "끝나면 네컷 전리품",
-    body: "파티가 끝나면 캐릭터와 칭호, 내 사진이 합쳐진 네컷 티켓이 남아요.",
+    head: "집에 갈 땐 네컷 한 장",
+    body: "내 캐릭터랑 오늘 받은 칭호, 제일 잘 나온 사진이 네컷 티켓 한 장으로 남아요.",
   },
 ];
 
@@ -136,9 +136,9 @@ export default function Home() {
           Snap<span className="text-accent">Quest</span>
         </h1>
         <p className="mt-3 text-lg font-semibold leading-snug text-white/90">
-          AI가 각자에게 다른 사진 미션 빙고판을 깔아주고,
+          QR 한 번 찍으면 내 폰에 나만의 사진 미션 9칸이 뜨고,
           <br />
-          파티가 끝나면 그 판이 나만의 네컷 전리품이 된다.
+          파티가 끝나면 그 판이 네컷 사진 한 장으로 남아요.
         </p>
 
         <ol className="mt-7 space-y-3">
@@ -160,7 +160,7 @@ export default function Home() {
             onClick={createRoom}
             disabled={busy !== null}
           >
-            {busy === "create" ? "파티 방 만드는 중이에요…" : "파티 방 만들기"}
+            {busy === "create" ? "파티 방 만드는 중이에요…" : "친구들과 할 파티 방 만들기"}
           </Button>
 
           <form onSubmit={enterRoom} className="flex gap-2">
@@ -196,8 +196,9 @@ export default function Home() {
         <Card className="mt-8">
           <h2 className="text-sm font-bold text-white">심사관용 데모</h2>
           <p className="mt-1 text-sm leading-relaxed text-white/60">
-            봇 참가자 6명이 이미 놀고 있는 방이에요. 혼자 열어도 파티가 돌아가고,
-            세 화면을 나란히 열어볼 수 있어요.
+            봇 참가자 6명이 이미 놀고 있는 방이에요. 혼자 열어도 파티가 돌아가요.
+            실제 파티에서는 세 화면이 동시에 켜져 있어요 — TV는 빔에, 호스트는 진행자 폰에,
+            게스트는 참가자 폰에. 아래 링크로 나란히 열어보세요.
           </p>
 
           <div aria-hidden className="mt-3 flex -space-x-2">
@@ -220,7 +221,7 @@ export default function Home() {
             onClick={createDemo}
             disabled={busy !== null}
           >
-            {busy === "demo" ? "데모 방 여는 중이에요…" : "데모 방 열기"}
+            {busy === "demo" ? "데모 방 여는 중이에요…" : "혼자 둘러보는 데모 방 열기"}
           </Button>
 
           {demoCode && (
@@ -231,9 +232,9 @@ export default function Home() {
               </p>
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {[
-                  { href: `/tv/${demoCode}`, label: "TV", hint: "빔·큰 화면" },
-                  { href: `/host/${demoCode}`, label: "호스트", hint: "진행 조작" },
-                  { href: `/play/${demoCode}`, label: "게스트", hint: "빙고·촬영" },
+                  { href: `/tv/${demoCode}`, label: "TV", hint: "빔에 띄우는 화면" },
+                  { href: `/host/${demoCode}`, label: "호스트", hint: "진행자 폰" },
+                  { href: `/play/${demoCode}`, label: "게스트", hint: "참가자 폰" },
                 ].map((l) => (
                   <LinkButton
                     key={l.href}
