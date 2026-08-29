@@ -90,3 +90,12 @@ Next Task: Task 1 - F4 데이터 타입 정의 및 시드/프리셋 데이터 �
   - `data/seed-photos.ts` 생성: 빈 화면을 방지할 6장의 시드 사진 및 캡션 데이터 구현
   - `npm run build`를 통해 타입 에러 없이 정상적으로 빌드되는 것 확인
 - **다음 태스크**: Task 2 - TV 스크린용 라이브 포토월 뷰 구현 (`components/photowall/TvPhotoWall.tsx`)
+
+=== [2026-08-29] Task 2 Completed ===
+- **작업 내역**:
+  - `components/photowall/TvPhotoWall.tsx` 생성: 빔프로젝터 및 대형 화면에 최적화된 다크 테마 기반 반응형 메이슨리 그리드 레이아웃 구현.
+  - `components/photowall/HostReactionBanner.tsx` 생성: 실시간 AI 사회자 리액션 멘트 롤링 애니메이션(fade-in/out) 배너 구현.
+  - `tailwind.config.ts` 업데이트: `fade-in`, `pop-in` 커스텀 애니메이션 키프레임 추가.
+  - 신규 사진 도착 시 중앙 강조 팝업(Pop-in), 숨김 처리 필터링, 사진 0장 시 시드 콘텐츠 렌더링 로직 추가.
+  - `npm run build`를 통해 빌드 에러 없이 정상적으로 컴파일되는 것 확인.
+- **다음 태스크**: Task 3 - 호스트용 사진 숨김/복구 컨트롤 패널 구현 (`components/photowall/HostPhotoWallControl.tsx`)

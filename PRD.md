@@ -26,7 +26,7 @@
   - `data/seed-photos.ts`: 사진 0장일 때 빈 화면을 방지할 봇/시드 사진 및 캡션 데이터 6개 이상 구성
   - *Done when*: 타입 에러 없이 import 가능하고 TypeScript 컴파일 성공
 
-- [ ] **Task 2: TV 스크린용 라이브 포토월 뷰 구현 (`components/photowall/TvPhotoWall.tsx`)**
+- [x] **Task 2: TV 스크린용 라이브 포토월 뷰 구현 (`components/photowall/TvPhotoWall.tsx`)**
   - 빔프로젝터/대형 화면에 최적화된 다크 테마 기반 반응형 그리드/메이슨리 레이아웃
   - 신규 사진 도착 시 화면 중앙 강조 팝업 및 부드러운 스케일/페이드인 애니메이션
   - 상단/하단 실시간 사회자 리액션 멘트 롤링 배너 (`components/photowall/HostReactionBanner.tsx`)
