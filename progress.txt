@@ -45,3 +45,11 @@ Next Task: Task 1 - F9 방 및 파티 생애주기 데이터 타입 & 상태 모
   - `app/create/page.tsx` 업데이트: 방 생성 시 로컬스토리지(`snapquest_rooms`)에 임시 데이터를 저장하여 테스트 연동.
   - `npm run build`로 타입 에러 없이 정상 빌드 확인.
 - **다음 태스크**: Task 4 - 호스트 폰 컨트롤 패널 UI (`?role=host`)
+
+=== [2026-08-29] Task 4 Completed ===
+- **작업 내역**:
+  - `components/host/HostControlPanel.tsx` 생성: 모바일 최적화 헤더 및 파티 생애주기 컨트롤 버튼, 부가 설정 토글 구현
+  - `app/room/[id]/page.tsx` 업데이트: `role === 'host'` 접속 시 `HostControlPanel` 렌더링 및 `room` 데이터 주입
+  - 토큰 인증 실패 시 예외 처리 화면 추가
+  - `npm run build`로 타입 에러 없이 정상 빌드 확인
+- **다음 태스크**: Task 5 - 파티 생애주기 실시간 동기화 훅 (`useRoomSession`)

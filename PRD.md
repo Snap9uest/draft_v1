@@ -43,7 +43,7 @@
     - 호스트 조작 버튼은 전혀 표시되지 않는 표시 전용(Display-only) 화면
   - *Done when*: `?role=tv` 접속 시 QR 코드와 방 코드가 선명하게 표시되고 상태 변화에 반응함
 
-- [ ] **Task 4: 호스트 폰 컨트롤 패널 UI (`?role=host`)**
+- [x] **Task 4: 호스트 폰 컨트롤 패널 UI (`?role=host`)**
   - `components/host/HostControlPanel.tsx`:
     - 모바일 최적화 헤더 (방 코드, 현재 파티 상태 배지, 참가자 수)
     - **파티 생애주기 컨트롤 버튼**:

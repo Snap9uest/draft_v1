@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { Room } from '../../../types/room';
 import { TvLobbyView } from '../../../components/room/TvLobbyView';
+import { HostControlPanel } from '../../../components/host/HostControlPanel';
 
 export default function RoomPage() {
   const params = useParams();
@@ -58,12 +59,7 @@ export default function RoomPage() {
   }
 
   if (role === 'host') {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        {/* Task 4에서 HostControlPanel 구현 예정 */}
-        <h1>호스트 컨트롤 패널 (구현 예정)</h1>
-      </div>
-    );
+    return <HostControlPanel initialRoom={room} />;
   }
 
   return (
