@@ -75,3 +75,18 @@ Next Task: Task 1 - F9 방 및 파티 생애주기 데이터 타입 & 상태 모
   - 방 생성 직후 호스트 화면에서는 TV 화면에 어떻게 접근하는지 불명확했던 UX를 호스트 패널 내 버튼을 통해 해결.
   - 게스트 뷰 빈 껍데기를 실제 뷰로 교체하여 비즈니스 규칙 확인.
 - **다음 태스크**: (F9 완료) 다음 F 기능 진행 준비
+
+=== [2026-08-29] [F9] Host Facilitator 100% Completed! ===
+All 6 tasks for [F9] completed successfully and pushed to remote branch `feature/f9-host-control`.
+
+=== [START] Beginning [F4] Live Photowall & MC Reaction Loop ===
+Target: [F4] 라이브 포토월 (TV 화면 실시간 포토월 그리드, AI 사회자 리액션 배너, 호스트 사진 숨김/복구, 실시간 동기화)
+Next Task: Task 1 - F4 데이터 타입 정의 및 시드/프리셋 데이터 구축
+
+=== [2026-08-29] Task 1 Completed ===
+- **작업 내역**:
+  - `types/photowall.ts` 업데이트: `PhotoItem`, `ReactionMessage` 데이터 타입 정의
+  - `data/preset-reactions.ts` 생성: 15개의 텐션업/감탄/케미/재미 카테고리별 프리셋 멘트 및 헬퍼 함수 구현
+  - `data/seed-photos.ts` 생성: 빈 화면을 방지할 6장의 시드 사진 및 캡션 데이터 구현
+  - `npm run build`를 통해 타입 에러 없이 정상적으로 빌드되는 것 확인
+- **다음 태스크**: Task 2 - TV 스크린용 라이브 포토월 뷰 구현 (`components/photowall/TvPhotoWall.tsx`)
