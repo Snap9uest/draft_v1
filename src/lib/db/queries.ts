@@ -33,6 +33,24 @@ export async function getRoomWithParticipants(
     };
   } catch (error) {
     warn("방", error);
+    // Supabase 키가 없거나 연결 실패 시 DEMO01 방 안전 폴백 제공
+    if (code.toUpperCase() === "DEMO01" || code.toUpperCase() === "DEMO") {
+      return {
+        room: {
+          id: "demo-room-id",
+          code: "DEMO01",
+          tone_preset: "동아리",
+          reward_on: true,
+          status: "live",
+          state: {},
+          is_demo: true,
+          created_at: new Date().toISOString(),
+          ended_at: null,
+          expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+        } as Room,
+        participants: [],
+      };
+    }
     return null;
   }
 }
