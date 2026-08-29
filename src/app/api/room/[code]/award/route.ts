@@ -17,7 +17,7 @@ export async function POST(
     const { code } = await params;
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const room = await hostRoom(code, body.hostToken);
-    if (!room) return fail("호스트 권한이 없습니다.", 403);
+    if (!room) return fail("이 기기에는 진행 권한이 없어요. 방을 만든 기기에서 열어 주세요.", 403);
 
     const db = serverDb();
     const { data: rows } = await db
@@ -35,7 +35,7 @@ export async function POST(
         captions: done.map((c) => c.caption ?? "").filter(Boolean),
       };
     });
-    if (!participants.length) return fail("참가자가 없습니다.", 409);
+    if (!participants.length) return fail("아직 참가자가 없어요. 한 명이라도 들어온 뒤에 발표해 주세요.", 409);
 
     // 배치 1회. 실패하면 완료 미션 수로 정렬한 규칙 기반 칭호.
     const res = await callAi<TitlesResponse>(generateTitles, { participants });
@@ -53,6 +53,6 @@ export async function POST(
 
     return NextResponse.json({ titles });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "시상에 실패했습니다.", 500);
+    return fail(error instanceof Error ? error.message : "칭호를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.", 500);
   }
 }

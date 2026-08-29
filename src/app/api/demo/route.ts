@@ -33,7 +33,7 @@ export async function GET() {
   } catch (error) {
     console.error("[demo] 데모 방 준비 실패:", error);
     return NextResponse.json(
-      { error: "데모 방을 준비하지 못했습니다." },
+      { error: "데모 방을 열지 못했어요. 다시 눌러 주세요." },
       { status: 500 },
     );
   }

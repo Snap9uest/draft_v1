@@ -30,21 +30,21 @@ export async function POST(request: Request) {
     const roomCode = str(body.roomCode).trim();
     const sessionToken = str(body.sessionToken).trim();
     const imageBase64 = str(body.imageBase64).trim();
-    if (!roomCode || !sessionToken) return fail("방 코드와 세션 토큰이 필요합니다.");
-    if (!imageBase64) return fail("사진 데이터가 없습니다.");
+    if (!roomCode || !sessionToken) return fail("입장 정보가 없어요. 다시 입장한 뒤 올려 주세요.");
+    if (!imageBase64) return fail("사진이 안 담겼어요. 다시 골라 주세요.");
     if (imageBase64.length > MAX_IMAGE_CHARS) {
-      return fail("사진이 너무 큽니다. 다시 촬영해 주세요.", 413);
+      return fail("사진이 너무 커요. 다시 찍어볼까요?", 413);
     }
 
     let cellIndex: number | null = null;
     if (body.cellIndex !== null && body.cellIndex !== undefined) {
       const n = Number(body.cellIndex);
-      if (!Number.isInteger(n) || n < 0 || n > 8) return fail("칸 번호가 올바르지 않습니다.");
+      if (!Number.isInteger(n) || n < 0 || n > 8) return fail("그 미션 칸을 찾을 수 없어요. 빙고판에서 다시 골라 주세요.");
       cellIndex = n;
     }
 
     const room = await getRoom(roomCode);
-    if (!room) return fail("방을 찾을 수 없습니다.", 404);
+    if (!room) return fail("방을 찾을 수 없어요. 방 코드를 다시 확인해 주세요.", 404);
 
     const db = serverDb();
     const { data: participant } = await db
@@ -53,13 +53,13 @@ export async function POST(request: Request) {
       .eq("room_id", room.id)
       .eq("session_token", sessionToken)
       .maybeSingle();
-    if (!participant) return fail("먼저 방에 입장해 주세요.", 403);
+    if (!participant) return fail("먼저 파티에 입장해 주세요.", 403);
 
     const url = await uploadImage(
       `${room.id}/${participant.id}-${Date.now()}`,
       imageBase64,
     );
-    if (!url) return fail("사진 업로드에 실패했습니다. 다시 시도해 주세요.", 502);
+    if (!url) return fail("사진을 올리지 못했어요. 다시 한 번 시도해 주세요.", 502);
 
     const board = (participant.board ?? []) as BoardCell[];
     const mission = cellIndex === null ? "" : (board[cellIndex]?.mission ?? "");
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
       .select("*")
       .single();
     if (error || !photo) {
-      return fail(`사진 저장에 실패했습니다: ${error?.message ?? "알 수 없는 오류"}`, 500);
+      return fail("사진을 저장하지 못했어요. 다시 시도해 주세요.", 500);
     }
 
     if (verified && cellIndex !== null) {
@@ -120,6 +120,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ photo, verified, caption });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "사진 저장에 실패했습니다.", 500);
+    return fail(error instanceof Error ? error.message : "사진을 저장하지 못했어요. 다시 시도해 주세요.", 500);
   }
 }

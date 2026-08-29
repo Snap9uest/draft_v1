@@ -26,7 +26,7 @@ async function post(url: string, body: unknown) {
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error ?? "요청에 실패했습니다.");
+  if (!res.ok) throw new Error(json.error ?? "잠깐 연결이 끊겼어요. 다시 눌러 주세요.");
   return json;
 }
 
@@ -37,7 +37,7 @@ async function patch(url: string, body: unknown) {
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error ?? "요청에 실패했습니다.");
+  if (!res.ok) throw new Error(json.error ?? "잠깐 연결이 끊겼어요. 다시 눌러 주세요.");
   return json;
 }
 
@@ -146,7 +146,7 @@ export default function HostPage({
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "요청에 실패했습니다.");
+      setError(e instanceof Error ? e.message : "잠깐 연결이 끊겼어요. 다시 눌러 주세요.");
     } finally {
       setBusy("");
     }
@@ -173,18 +173,19 @@ export default function HostPage({
     });
 
   if (!loaded) {
-    return <main className="p-6 text-sm text-neutral-400">불러오는 중…</main>;
+    return <main className="p-6 text-sm text-neutral-400">호스트 화면 여는 중이에요…</main>;
   }
 
   if (!room) {
     return (
       <main className="mx-auto max-w-md p-6">
-        <h1 className="text-xl font-bold">방을 찾을 수 없습니다</h1>
+        <h1 className="text-xl font-bold">방을 찾을 수 없어요</h1>
         <p className="mt-2 text-sm text-neutral-400">
-          방 코드 <span className="font-mono">{code}</span> 로 열린 파티가 없습니다.
+          방 코드 <span className="font-mono">{code}</span> 로 열린 파티가 없어요. 코드를 다시
+          확인해 주세요.
         </p>
         <Link href="/" className="mt-6 inline-block underline">
-          홈으로
+          홈으로 가기
         </Link>
       </main>
     );
@@ -197,7 +198,7 @@ export default function HostPage({
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-6 p-4 pb-24">
       <header className="flex items-baseline justify-between">
-        <h1 className="text-lg font-bold">호스트 컨트롤</h1>
+        <h1 className="text-lg font-bold">파티 진행하기</h1>
         <span className="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-200">
           {STATUS_LABEL[room.status]}
         </span>
@@ -209,11 +210,13 @@ export default function HostPage({
         {qr ? (
           <img
             src={qr}
-            alt={`${room.code} 방 입장 QR 코드`}
+            alt={`${room.code} 방 입장 QR 코드 — 폰 카메라로 찍으면 바로 입장해요`}
             className="mx-auto mt-4 h-56 w-56 rounded-xl bg-white p-2"
           />
         ) : (
-          <p className="mt-4 text-sm text-neutral-400">QR을 만들지 못했습니다. 아래 주소를 알려주세요.</p>
+          <p className="mt-4 text-sm text-neutral-400">
+            QR이 안 만들어졌어요. 아래 주소를 대신 알려주세요.
+          </p>
         )}
         <p className="mt-3 break-all text-xs text-neutral-400">{joinUrl}</p>
         <button
@@ -222,11 +225,11 @@ export default function HostPage({
           onClick={() => {
             navigator.clipboard
               ?.writeText(joinUrl)
-              .then(() => setNotice("입장 링크를 복사했습니다."))
-              .catch(() => setNotice("복사에 실패했습니다. 주소를 직접 알려주세요."));
+              .then(() => setNotice("입장 링크를 복사했어요. 붙여넣어 보내 주세요."))
+              .catch(() => setNotice("복사가 안 됐어요. 위 주소를 직접 알려주세요."));
           }}
         >
-          입장 링크 복사
+          입장 링크 복사하기
         </button>
       </section>
 
@@ -243,10 +246,10 @@ export default function HostPage({
 
       {!hostToken && (
         <section className="rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold">호스트 권한 없음</p>
+          <p className="font-semibold">지금은 구경만 할 수 있어요</p>
           <p className="mt-1 text-neutral-500">
-            이 브라우저에 호스트 토큰이 없습니다. 방을 만든 기기에서 열거나, 아래에 호스트
-            토큰을 붙여넣으세요.
+            이 기기에는 진행 권한이 없어요. 방을 만든 기기에서 열거나, 아래에 진행 코드를
+            붙여넣어 주세요.
           </p>
           <form
             className="mt-3 flex gap-2"
@@ -260,16 +263,16 @@ export default function HostPage({
             }}
           >
             <label className="sr-only" htmlFor="host-token">
-              호스트 토큰
+              진행 코드
             </label>
             <input
               id="host-token"
               name="token"
               className="min-h-11 flex-1 rounded-lg border border-neutral-300 px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-              placeholder="호스트 토큰"
+              placeholder="진행 코드 붙여넣기"
             />
             <button type="submit" className="min-h-11 rounded-lg bg-neutral-900 px-4 text-sm text-white dark:bg-white dark:text-neutral-900">
-              저장
+              권한 켜기
             </button>
           </form>
         </section>
@@ -280,7 +283,11 @@ export default function HostPage({
           {error}
         </p>
       )}
-      {notice && <p className="text-sm text-neutral-500">{notice}</p>}
+      {notice && (
+        <p role="status" className="text-sm text-neutral-500">
+          {notice}
+        </p>
+      )}
 
       <fieldset disabled={!hostToken || busy !== ""} className="contents">
         <section>
@@ -303,7 +310,7 @@ export default function HostPage({
             ))}
           </div>
           <p className="mt-2 text-xs text-neutral-500">
-            이후 입장하는 사람의 빙고 미션에 적용됩니다.
+            지금 고른 톤은 다음에 들어오는 사람의 미션부터 적용돼요.
           </p>
         </section>
 
@@ -311,7 +318,7 @@ export default function HostPage({
           <label htmlFor="reward" className="text-sm">
             <span className="font-semibold">현장 리워드 안내</span>
             <span className="block text-xs text-neutral-500">
-              켜면 게스트 화면에 리워드 문구가 노출됩니다.
+              켜면 게스트 폰에 리워드 안내가 떠요.
             </span>
           </label>
           <input
@@ -331,7 +338,7 @@ export default function HostPage({
               className="min-h-12 rounded-xl bg-neutral-900 text-white disabled:opacity-40 dark:bg-white dark:text-neutral-900"
               onClick={() => patchRoom({ status: "live" })}
             >
-              파티 시작
+              파티 시작하기
             </button>
           )}
           <button
@@ -340,12 +347,16 @@ export default function HostPage({
             onClick={() =>
               run("bots", async () => {
                 const { added } = await post(`/api/room/${code}/bots`, { hostToken });
-                setNotice(added ? `봇 ${added}명을 투입했습니다.` : "이미 봇이 전부 들어와 있습니다.");
+                setNotice(
+                  added
+                    ? `봇 참가자 ${added}명이 들어왔어요.`
+                    : "봇 참가자는 이미 다 들어와 있어요.",
+                );
                 refresh();
               })
             }
           >
-            {busy === "bots" ? "투입 중…" : "봇 투입"}
+            {busy === "bots" ? "봇 참가자 부르는 중이에요…" : "봇 참가자 부르기"}
           </button>
           <button
             type="button"
@@ -353,23 +364,23 @@ export default function HostPage({
             onClick={() =>
               run("award", async () => {
                 await post(`/api/room/${code}/award`, { hostToken });
-                setNotice("칭호를 발표했습니다. TV 화면을 확인하세요.");
+                setNotice("칭호를 발표했어요. TV 화면을 봐 주세요.");
                 refresh();
               })
             }
           >
-            {busy === "award" ? "칭호 만드는 중…" : "시상 시작"}
+            {busy === "award" ? "AI가 칭호를 고르는 중이에요…" : "칭호 발표하기"}
           </button>
           {confirmEnd ? (
             <div className="rounded-xl border border-red-500/60 p-3">
-              <p className="text-sm">파티를 종료할까요? 새 입장과 인증이 막힙니다.</p>
+              <p className="text-sm">파티를 끝낼까요? 새 입장과 인증이 막혀요.</p>
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
                   className="min-h-12 flex-1 rounded-xl bg-neutral-100 disabled:opacity-40 dark:bg-neutral-800"
                   onClick={() => setConfirmEnd(false)}
                 >
-                  취소
+                  그냥 두기
                 </button>
                 <button
                   type="button"
@@ -379,7 +390,7 @@ export default function HostPage({
                     setConfirmEnd(false);
                   }}
                 >
-                  종료하기
+                  네, 끝낼게요
                 </button>
               </div>
             </div>
@@ -389,7 +400,7 @@ export default function HostPage({
               className="min-h-12 rounded-xl border border-red-500/60 text-red-500 disabled:opacity-40"
               onClick={() => setConfirmEnd(true)}
             >
-              파티 종료
+              파티 끝내기
             </button>
           )}
         </section>
@@ -397,7 +408,7 @@ export default function HostPage({
         <section>
           <h2 className="mb-2 text-sm font-semibold">사진 {photos.length}장</h2>
           {photos.length === 0 ? (
-            <p className="text-sm text-neutral-500">아직 올라온 사진이 없습니다.</p>
+            <p className="text-sm text-neutral-500">아직 첫 사진을 기다리는 중이에요 📸</p>
           ) : (
             <ul className="grid grid-cols-2 gap-3">
               {photos.map((photo) => {
@@ -406,19 +417,22 @@ export default function HostPage({
                   <li key={photo.id} className="overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
                     <img
                       src={photo.url}
-                      alt={photo.caption || `${owner?.nickname ?? "참가자"}의 사진`}
+                      alt={photo.caption || `${owner?.nickname ?? "누군가"}님이 올린 사진`}
                       className={`aspect-square w-full object-cover ${photo.hidden ? "opacity-30" : ""}`}
                     />
                     <div className="p-2">
                       <p className="truncate text-xs text-neutral-500">
-                        {owner?.nickname ?? "참가자"}
+                        {owner?.nickname ?? "누군가"}
                       </p>
                       <button
                         type="button"
+                        aria-label={`${owner?.nickname ?? "누군가"}님의 사진 ${
+                          photo.hidden ? "TV에 다시 띄우기" : "TV에서 숨기기"
+                        }`}
                         className="mt-1 min-h-11 w-full rounded-lg bg-neutral-200 text-xs disabled:opacity-40 dark:bg-neutral-800"
                         onClick={() => toggleHidden(photo)}
                       >
-                        {photo.hidden ? "다시 보이기" : "숨기기"}
+                        {photo.hidden ? "다시 띄우기" : "숨기기"}
                       </button>
                     </div>
                   </li>

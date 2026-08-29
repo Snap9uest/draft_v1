@@ -20,7 +20,7 @@ const MC_INTROS = [
   "반가워요 {n}님, 빙고판 준비 완료 🎯",
   "{n}님이 파티에 합류했어요 🎉",
   "{n}님, 카메라 준비되셨나요? 📸",
-  "{n}님 등장에 분위기가 확 살아납니다 🔥",
+  "{n}님 등장에 분위기가 확 살아나요 🔥",
 ];
 
 const MC_REACTIONS = [
@@ -156,7 +156,7 @@ export default function TvScreen({ code }: { code: string }) {
       <Shell code={code}>
         <Center>
           <p className="text-[clamp(1.5rem,3vw,3rem)] text-white/70">
-            {missing ? `${code} 방을 찾을 수 없습니다` : "파티를 불러오는 중…"}
+            {missing ? `${code} 방을 찾을 수 없어요` : "파티 여는 중이에요…"}
           </p>
         </Center>
       </Shell>
@@ -242,7 +242,7 @@ function Center({ children }: { children: React.ReactNode }) {
 }
 
 function Avatar({ p, size }: { p: Participant; size: string }) {
-  const label = `${p.nickname} 캐릭터`;
+  const label = `${p.nickname}님의 캐릭터`;
   return p.avatar_url ? (
     <img
       src={p.avatar_url}
@@ -296,7 +296,7 @@ function Lobby({ participants, tick }: { participants: Participant[]; tick: numb
             폰으로 QR을 찍고 닉네임만 넣으면 바로 시작 — 설치도 로그인도 없어요
           </p>
         </Center>
-        <McBanner text="곧 시작합니다! 방 코드를 확인하고 입장해 주세요 🎉" />
+        <McBanner text="곧 시작해요! 방 코드 찍고 들어오세요 🎉" />
       </>
     );
   }
@@ -403,16 +403,25 @@ function WaitingWall({
   return (
     <>
       <Center>
-        <div className="flex flex-col items-center gap-6 p-8 rounded-3xl bg-white/5 border border-white/10 max-w-2xl text-center">
+        <div className="flex max-w-2xl flex-col items-center gap-6 rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <span className="text-6xl animate-bounce">📸</span>
-          <h2 className="text-3xl font-extrabold text-white">첫 번째 미션 인증 사진을 기다리고 있어요!</h2>
-          <p className="text-xl text-white/70 leading-relaxed">
-            폰 화면의 3×3 빙고판에서 미션을 골라 사진을 촬영해 보세요.<br />
-            인증 즉시 이 대형 화면에 실시간으로 나타납니다 ✨
+          <h2 className="text-3xl font-extrabold text-white">첫 사진을 기다리는 중이에요</h2>
+          <p className="text-xl leading-relaxed text-white/70">
+            폰에 깔린 3×3 빙고판에서 미션을 하나 골라 찍어보세요.
+            <br />
+            올리는 순간 이 화면에 바로 떠요 ✨
           </p>
         </div>
       </Center>
-      <McBanner text="첫 인증 사진의 주인공은 누구일까요? 지금 바로 사진을 올려보세요! 🚀" />
+      <McBanner
+        text={
+          [
+            "첫 사진의 주인공은 누구일까요? 지금 찍으러 가요 📸",
+            "사진이 올라오면 바로 이 화면에 떠요 ✨",
+            "미션은 각자 다르게 깔려요. 내 폰을 확인해 보세요 🎯",
+          ][tick % 3]
+        }
+      />
     </>
   );
 }
@@ -446,10 +455,10 @@ function Award({
       <>
         <Center>
           <p className="sq-breathe text-[clamp(2rem,4.5vw,5rem)] font-black">
-            {ended ? "파티가 끝났습니다 🎊" : "칭호를 집계하는 중…"}
+            {ended ? "파티가 끝났어요 🎊" : "AI가 오늘의 칭호를 고르는 중이에요"}
           </p>
           <p className="text-[clamp(1.25rem,2vw,2.5rem)] text-white/60">
-            잠시 후 오늘의 주인공들이 발표됩니다
+            잠시 후 오늘의 주인공을 발표해요
           </p>
         </Center>
         <McBanner text="두구두구두구… 🥁" />
@@ -510,7 +519,7 @@ function Award({
 
         <section className="min-h-0">
           <h2 className="mb-[1vh] text-[clamp(1.1rem,1.6vw,2rem)] text-white/50">
-            베스트샷 투표 · 폰에서 참여하세요
+            베스트샷 투표 · 폰에서 함께 투표해요
           </h2>
           {candidates.length ? (
             <ul className="flex flex-col gap-[1.2vh]">

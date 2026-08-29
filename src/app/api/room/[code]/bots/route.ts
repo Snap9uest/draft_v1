@@ -25,7 +25,7 @@ export async function POST(
     let room = await hostRoom(code, body.hostToken);
     if (!room) {
       const open = await getRoom(code);
-      if (!open?.is_demo) return fail("호스트 권한이 없습니다.", 403);
+      if (!open?.is_demo) return fail("이 기기에는 진행 권한이 없어요. 방을 만든 기기에서 열어 주세요.", 403);
       room = open;
     }
 
@@ -54,10 +54,10 @@ export async function POST(
     if (!rows.length) return NextResponse.json({ added: 0 });
 
     const { data, error } = await db.from("participants").insert(rows).select("id");
-    if (error) return fail(`봇 투입에 실패했습니다: ${error.message}`, 500);
+    if (error) return fail("봇 참가자를 부르지 못했어요. 다시 눌러 주세요.", 500);
 
     return NextResponse.json({ added: data?.length ?? 0 });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "봇 투입에 실패했습니다.", 500);
+    return fail(error instanceof Error ? error.message : "봇 참가자를 부르지 못했어요. 다시 눌러 주세요.", 500);
   }
 }

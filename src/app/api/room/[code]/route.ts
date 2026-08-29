@@ -13,7 +13,7 @@ export async function GET(
   try {
     const { code } = await params;
     const room = await getRoom(code);
-    if (!room) return fail("방을 찾을 수 없습니다.", 404);
+    if (!room) return fail("방을 찾을 수 없어요. 방 코드를 다시 확인해 주세요.", 404);
 
     const { data: participants } = await serverDb()
       .from("participants")
@@ -23,7 +23,7 @@ export async function GET(
 
     return NextResponse.json({ room, participants: participants ?? [] });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "방 조회에 실패했습니다.", 500);
+    return fail(error instanceof Error ? error.message : "파티 정보를 불러오지 못했어요. 다시 시도해 주세요.", 500);
   }
 }
 
@@ -36,18 +36,18 @@ export async function PATCH(
     const { code } = await params;
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const room = await hostRoom(code, body.hostToken);
-    if (!room) return fail("호스트 권한이 없습니다.", 403);
+    if (!room) return fail("이 기기에는 진행 권한이 없어요. 방을 만든 기기에서 열어 주세요.", 403);
 
     const patch: Record<string, unknown> = {};
     if (body.status !== undefined) {
       const status = str(body.status) as RoomStatus;
-      if (!STATUSES.includes(status)) return fail("올바르지 않은 상태값입니다.");
+      if (!STATUSES.includes(status)) return fail("그 진행 단계로는 넘어갈 수 없어요.");
       patch.status = status;
       if (status === "ended") patch.ended_at = new Date().toISOString();
     }
     if (body.tonePreset !== undefined) {
       const tone = str(body.tonePreset).trim().slice(0, 20);
-      if (!tone) return fail("톤 프리셋이 비어 있습니다.");
+      if (!tone) return fail("미션 톤을 하나 골라 주세요.");
       patch.tone_preset = tone;
     }
     if (body.rewardOn !== undefined) patch.reward_on = body.rewardOn === true;
@@ -59,10 +59,10 @@ export async function PATCH(
       .eq("id", room.id)
       .select(ROOM_COLS)
       .single();
-    if (error) return fail(`방 수정에 실패했습니다: ${error.message}`, 500);
+    if (error) return fail("설정을 저장하지 못했어요. 다시 눌러 주세요.", 500);
 
     return NextResponse.json({ room: data });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "방 수정에 실패했습니다.", 500);
+    return fail(error instanceof Error ? error.message : "설정을 저장하지 못했어요. 다시 눌러 주세요.", 500);
   }
 }

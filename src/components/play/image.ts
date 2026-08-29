@@ -17,7 +17,7 @@ export async function fileToJpegDataUrl(
   canvas.height = Math.max(1, Math.round(src.height * scale));
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("이 브라우저에서는 사진을 처리할 수 없어요.");
+  if (!ctx) throw new Error("이 폰에서는 사진을 열지 못했어요. 다른 사진을 골라 주세요.");
   ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
   if ("close" in src) src.close();
 

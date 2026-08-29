@@ -24,11 +24,11 @@ export async function POST(request: Request) {
         .single();
       if (data) return NextResponse.json({ room: data, hostToken });
       if (error?.code !== "23505") {
-        return fail(`방 생성에 실패했습니다: ${error?.message ?? "알 수 없는 오류"}`, 500);
+        return fail("방을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.", 500);
       }
     }
-    return fail("방 코드를 만들지 못했습니다. 다시 시도해 주세요.", 500);
+    return fail("방 코드를 만들지 못했어요. 다시 눌러 주세요.", 500);
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "방 생성에 실패했습니다.", 500);
+    return fail(error instanceof Error ? error.message : "방을 만들지 못했어요. 다시 눌러 주세요.", 500);
   }
 }

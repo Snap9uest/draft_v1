@@ -12,17 +12,17 @@ const PITCH = [
   {
     n: "01",
     head: "각자 다른 빙고판",
-    body: "AI가 참가자 프로필을 크로스해 1인 1판 — 서로 다른 3×3 사진 미션을 깔아준다.",
+    body: "AI가 서로를 엮어서 한 사람 앞에 한 판씩, 다 다른 3×3 사진 미션을 깔아줘요.",
   },
   {
     n: "02",
     head: "찍으면 알아서 인증",
-    body: "사진을 올리면 AI가 판정하고 캡션까지 붙여 TV 포토월에 띄운다. 타이핑 0회.",
+    body: "사진만 올리면 AI가 알아서 인증하고 캡션까지 붙여 큰 화면에 띄워요. 타이핑은 없어요.",
   },
   {
     n: "03",
     head: "끝나면 네컷 전리품",
-    body: "파티가 끝나면 캐릭터·칭호·내 사진이 합쳐진 나만의 네컷 티켓이 남는다.",
+    body: "파티가 끝나면 캐릭터와 칭호, 내 사진이 합쳐진 네컷 티켓이 남아요.",
   },
 ];
 
@@ -44,7 +44,9 @@ async function postJson(url: string, body: unknown) {
   });
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
-    throw new Error(typeof data.error === "string" ? data.error : "요청에 실패했습니다.");
+    throw new Error(
+      typeof data.error === "string" ? data.error : "잠깐 연결이 끊겼어요. 다시 눌러 주세요.",
+    );
   }
   return data;
 }
@@ -69,7 +71,7 @@ export default function Home() {
       setHostToken(room.code, hostToken);
       router.push(`/host/${room.code}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "방을 만들지 못했습니다.");
+      setError(e instanceof Error ? e.message : "방을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.");
       setBusy(null);
     }
   }
@@ -87,7 +89,7 @@ export default function Home() {
         hostToken?: string;
         error?: string;
       };
-      if (!res.ok || !code) throw new Error("데모 방을 준비하지 못했습니다.");
+      if (!res.ok || !code) throw new Error("데모 방을 열지 못했어요. 다시 눌러 주세요.");
       if (hostToken) setHostToken(code, hostToken);
       try {
         localStorage.setItem(DEMO_KEY, code);
@@ -96,7 +98,7 @@ export default function Home() {
       }
       setFreshDemo(code);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "데모 방을 준비하지 못했습니다.");
+      setError(e instanceof Error ? e.message : "데모 방을 열지 못했어요. 다시 눌러 주세요.");
     } finally {
       setBusy(null);
     }
@@ -105,7 +107,7 @@ export default function Home() {
   function enterRoom(e: React.FormEvent) {
     e.preventDefault();
     if (code.length !== 6) {
-      setError("방 코드 6자리를 입력해 주세요.");
+      setError("방 코드 6자리를 다 넣어 주세요.");
       return;
     }
     router.push(`/play/${code}`);
@@ -127,7 +129,7 @@ export default function Home() {
       <div className="relative w-full max-w-md">
         <p className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white/70">
           <span className="size-1.5 rounded-full bg-pop" />
-          파티 중(during)을 채우는 AI
+          파티하는 동안 같이 노는 AI
         </p>
 
         <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight">
@@ -158,7 +160,7 @@ export default function Home() {
             onClick={createRoom}
             disabled={busy !== null}
           >
-            {busy === "create" ? "방 만드는 중…" : "방 만들기"}
+            {busy === "create" ? "파티 방 만드는 중이에요…" : "파티 방 만들기"}
           </Button>
 
           <form onSubmit={enterRoom} className="flex gap-2">
@@ -180,7 +182,7 @@ export default function Home() {
               className="min-h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 font-mono text-lg tracking-[0.2em] placeholder:font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-white/35 focus:border-accent focus:outline-none"
             />
             <Button type="submit" variant="ghost" disabled={code.length !== 6}>
-              입장
+              입장하기
             </Button>
           </form>
 
@@ -194,8 +196,8 @@ export default function Home() {
         <Card className="mt-8">
           <h2 className="text-sm font-bold text-white">심사관용 데모</h2>
           <p className="mt-1 text-sm leading-relaxed text-white/60">
-            봇 참가자 6명이 이미 놀고 있는 방입니다. 혼자 열어도 파티가 진행
-            중이고, 세 화면을 탭으로 나란히 볼 수 있습니다.
+            봇 참가자 6명이 이미 놀고 있는 방이에요. 혼자 열어도 파티가 돌아가고,
+            세 화면을 나란히 열어볼 수 있어요.
           </p>
 
           <div aria-hidden className="mt-3 flex -space-x-2">
@@ -218,7 +220,7 @@ export default function Home() {
             onClick={createDemo}
             disabled={busy !== null}
           >
-            {busy === "demo" ? "데모 방 준비 중…" : "데모 방 열기"}
+            {busy === "demo" ? "데모 방 여는 중이에요…" : "데모 방 열기"}
           </Button>
 
           {demoCode && (
@@ -238,6 +240,7 @@ export default function Home() {
                     href={l.href}
                     target="_blank"
                     rel="noreferrer"
+                    aria-label={`${l.label} 화면 새 탭에서 열기 — ${l.hint}`}
                     className="flex-col gap-0 px-2 text-sm"
                   >
                     {l.label}
@@ -250,7 +253,7 @@ export default function Home() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-white/35">
-          설치·로그인 없음 · 사진은 7일 뒤 자동 삭제
+          설치도 로그인도 없어요 · 사진은 7일 뒤 자동으로 지워져요
         </p>
       </div>
     </main>

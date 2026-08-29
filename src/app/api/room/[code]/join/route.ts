@@ -35,21 +35,21 @@ export async function POST(
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
     const nickname = str(body.nickname).trim().slice(0, 20);
-    if (!nickname) return fail("닉네임을 입력해 주세요.");
+    if (!nickname) return fail("TV에 뜰 이름을 정해 주세요.");
     const sessionToken = str(body.sessionToken).trim();
     if (!sessionToken || sessionToken.length > 64) {
-      return fail("세션 토큰이 올바르지 않습니다.");
+      return fail("입장 정보가 꼬였어요. 화면을 새로고침한 뒤 다시 들어와 주세요.");
     }
     const intro = str(body.intro).trim().slice(0, 300);
     const selfieBase64 = str(body.selfieBase64).trim();
     if (selfieBase64.length > MAX_IMAGE_CHARS) {
-      return fail("셀카 이미지가 너무 큽니다. 다시 촬영해 주세요.", 413);
+      return fail("셀카가 너무 커요. 다시 찍어볼까요?", 413);
     }
     const invitedBy = str(body.invitedBy).trim() || null;
 
     const room = await getRoom(code);
-    if (!room) return fail("방을 찾을 수 없습니다.", 404);
-    if (room.status === "ended") return fail("이미 종료된 파티입니다.", 409);
+    if (!room) return fail("방을 찾을 수 없어요. 방 코드를 다시 확인해 주세요.", 404);
+    if (room.status === "ended") return fail("이미 끝난 파티예요. 앨범에서 사진은 볼 수 있어요.", 409);
 
     const db = serverDb();
 
@@ -88,7 +88,7 @@ export async function POST(
       .select(PARTICIPANT_COLS)
       .single();
     if (error || !participant) {
-      return fail(`입장에 실패했습니다: ${error?.message ?? "알 수 없는 오류"}`, 500);
+      return fail("입장하지 못했어요. 다시 눌러 주세요.", 500);
     }
 
     const id = participant.id as string;
@@ -135,6 +135,6 @@ export async function POST(
 
     return NextResponse.json({ participant });
   } catch (error) {
-    return fail(error instanceof Error ? error.message : "입장에 실패했습니다.", 500);
+    return fail(error instanceof Error ? error.message : "입장하지 못했어요. 다시 눌러 주세요.", 500);
   }
 }

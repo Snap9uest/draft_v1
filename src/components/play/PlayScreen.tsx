@@ -15,7 +15,7 @@ import Album from "./Album";
 import { fileToJpegDataUrl } from "./image";
 
 const BTN = "min-h-11 rounded-full px-5 font-semibold disabled:opacity-50";
-const err = (e: unknown) => (e instanceof Error ? e.message : "알 수 없는 오류가 발생했어요.");
+const err = (e: unknown) => (e instanceof Error ? e.message : "잠깐 문제가 생겼어요. 다시 해볼까요?");
 
 async function api<T>(url: string, body: unknown, method = "POST"): Promise<T> {
   const res = await fetch(url, {
@@ -24,7 +24,7 @@ async function api<T>(url: string, body: unknown, method = "POST"): Promise<T> {
     body: JSON.stringify(body),
   });
   const json = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(json.error ?? "요청에 실패했어요. 다시 시도해 주세요.");
+  if (!res.ok) throw new Error(json.error ?? "연결이 잠깐 끊겼어요. 다시 해볼까요?");
   return json;
 }
 
@@ -193,7 +193,7 @@ export default function PlayScreen({
     try {
       await api(`/api/photo/${pending.photoId}`, { sessionToken: getSessionToken() }, "PATCH");
       setPending(null);
-      setToast("직접 인증으로 칸을 채웠어요.");
+      setToast("칸을 채웠어요. 다음 미션도 가볼까요?");
       await load();
     } catch (e) {
       setPending({ ...pending, phase: "error", message: err(e) });
@@ -224,7 +224,7 @@ export default function PlayScreen({
   if (loading) {
     return (
       <main className="flex flex-1 items-center justify-center p-6">
-        <p className="animate-pulse text-sm text-white/60">파티 불러오는 중…</p>
+        <p className="animate-pulse text-sm text-white/60">파티 여는 중이에요…</p>
       </main>
     );
   }
@@ -232,7 +232,9 @@ export default function PlayScreen({
   if (fatal || !room) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-sm text-white/80">{fatal ?? "방 정보를 불러오지 못했어요."}</p>
+        <p className="text-sm text-white/80">
+          {fatal ?? "파티를 불러오지 못했어요. 다시 눌러 주세요."}
+        </p>
         <button
           onClick={() => {
             setLoading(true);
@@ -240,7 +242,7 @@ export default function PlayScreen({
           }}
           className={`${BTN} bg-accent text-black`}
         >
-          다시 시도
+          다시 불러오기
         </button>
       </main>
     );
@@ -287,7 +289,7 @@ export default function PlayScreen({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold">{me?.nickname ?? "게스트"}</p>
             <p className="text-xs text-white/55">
-              {me ? `${code} · 인증 ${doneCount}/9 · 빙고 ${lines}줄` : `${code} · 앨범 열람 중`}
+              {me ? `${code} · 미션 ${doneCount}/9 · 빙고 ${lines}줄` : `${code} · 앨범만 보는 중`}
             </p>
           </div>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
@@ -313,10 +315,10 @@ export default function PlayScreen({
 
       {room.status === "award" && me && (
         <section className="mb-3 px-4">
-          <h2 className="mb-2 text-sm font-bold">베스트샷 투표 {votedId && "· 완료"}</h2>
+          <h2 className="mb-2 text-sm font-bold">베스트샷 투표 {votedId && "· 투표했어요"}</h2>
           {photos.length === 0 ? (
             <p className="rounded-xl border border-dashed border-white/15 px-4 py-6 text-center text-xs text-white/50">
-              투표할 사진이 아직 없어요.
+              아직 후보 사진이 없어요. 곧 올라올 거예요 📸
             </p>
           ) : (
             <ul className="flex gap-2 overflow-x-auto pb-1">
@@ -326,15 +328,15 @@ export default function PlayScreen({
                     disabled={busy}
                     onClick={() => void vote(photo.id)}
                     aria-label={`${
-                      participants.find((p) => p.id === photo.owner_id)?.nickname ?? "익명"
-                    }의 사진에 투표`}
+                      participants.find((p) => p.id === photo.owner_id)?.nickname ?? "누군가"
+                    }님의 사진에 투표하기`}
                     className={`block w-28 overflow-hidden rounded-xl border-2 ${
                       votedId === photo.id ? "border-accent" : "border-transparent"
                     }`}
                   >
                     <img
                       src={photo.url}
-                      alt={photo.caption || "후보 사진"}
+                      alt={photo.caption || "투표 후보로 올라온 파티 사진"}
                       className="aspect-square w-full object-cover"
                     />
                   </button>
@@ -361,8 +363,8 @@ export default function PlayScreen({
                       if (done && photo) setViewing(photo);
                       else setSheetCell(i);
                     }}
-                    aria-label={`${i + 1}번 미션: ${cell?.mission ?? "준비 중"}${
-                      done ? " (완료)" : ""
+                    aria-label={`${i + 1}번 미션 ${cell?.mission ?? "준비 중"}. ${
+                      done ? "인증 완료, 사진 보기" : "사진 올리기"
                     }`}
                     className={`relative flex aspect-square w-full flex-col items-center justify-center overflow-hidden rounded-xl p-1.5 text-center text-[11px] leading-tight ${
                       done
@@ -392,7 +394,7 @@ export default function PlayScreen({
                     )}
                     {judging && (
                       <span className="absolute bottom-1 z-10 animate-pulse rounded-full bg-pop px-2 py-0.5 text-[10px] font-bold text-white">
-                        판정 중
+                        인증 중
                       </span>
                     )}
                   </button>
@@ -402,7 +404,7 @@ export default function PlayScreen({
           </ul>
           {board.length === 0 && (
             <p className="mt-3 text-center text-xs text-white/50">
-              나만의 빙고판을 만드는 중이에요. 잠시만요…
+              AI가 나만의 미션을 고르는 중이에요
             </p>
           )}
           {lines > 0 && (
@@ -427,13 +429,13 @@ export default function PlayScreen({
           <>
             <button
               onClick={() => setTab("board")}
-              aria-current={tab === "board"}
+              aria-current={tab === "board" ? "page" : undefined}
               className={`${BTN} flex-1 ${tab === "board" ? "bg-white/15" : "text-white/60"}`}
             >
-              빙고판
+              내 빙고판
             </button>
             <label className="flex min-h-14 min-w-14 cursor-pointer items-center justify-center rounded-full bg-accent text-2xl text-black">
-              <span className="sr-only">자유 사진 찍기</span>
+              <span className="sr-only">미션 없이 사진 찍기</span>
               <span aria-hidden>📷</span>
               <input
                 type="file"
@@ -451,7 +453,7 @@ export default function PlayScreen({
         )}
         <button
           onClick={() => setTab("album")}
-          aria-current={tab === "album"}
+          aria-current={tab === "album" ? "page" : undefined}
           className={`${BTN} flex-1 ${tab === "album" ? "bg-white/15" : "text-white/60"}`}
         >
           앨범
@@ -467,17 +469,17 @@ export default function PlayScreen({
       </nav>
 
       {sheetCell !== null && (
-        <Sheet onClose={() => setSheetCell(null)} title={board[sheetCell]?.mission ?? "자유 사진"}>
+        <Sheet onClose={() => setSheetCell(null)} title={board[sheetCell]?.mission ?? "미션 없이 한 장"}>
           <p className="text-xs text-white/60">
             찍으면 AI가 알아서 인증하고 캡션을 달아줘요. 타이핑은 없어요.
           </p>
           <PickButton
-            label="📸 지금 찍기"
+            label="지금 찍기 📸"
             capture
             primary
             onPick={(f) => void upload(f, sheetCell)}
           />
-          <PickButton label="🖼️ 앨범에서 고르기" onPick={(f) => void upload(f, sheetCell)} />
+          <PickButton label="앨범에서 고르기 🖼️" onPick={(f) => void upload(f, sheetCell)} />
         </Sheet>
       )}
 
@@ -486,10 +488,10 @@ export default function PlayScreen({
           onClose={() => setPending(null)}
           title={
             pending.phase === "error"
-              ? "업로드 실패"
+              ? "사진이 안 올라갔어요"
               : pending.verified
                 ? "인증 완료!"
-                : "판정이 애매했어요"
+                : "한 번만 확인해 주세요"
           }
         >
           {pending.preview && (
@@ -517,19 +519,19 @@ export default function PlayScreen({
                   onClick={() => setPending(null)}
                   className={`${BTN} w-full bg-accent text-black`}
                 >
-                  확인
+                  빙고판으로 돌아가기
                 </button>
               ) : (
                 <>
                   <p className="text-xs text-white/60">
-                    AI가 미션을 확신하지 못했어요. 직접 인증하면 칸이 바로 채워져요.
+                    사진은 잘 올라갔어요. 직접 인증하면 칸이 바로 채워져요.
                   </p>
                   <button
                     disabled={busy}
                     onClick={() => void selfCheck()}
                     className={`${BTN} w-full bg-accent text-black`}
                   >
-                    직접 인증하기
+                    이 사진으로 인증하기
                   </button>
                   <PickButton
                     label="다시 찍기"
@@ -545,7 +547,7 @@ export default function PlayScreen({
 
       {pending?.phase === "judging" && pending.cellIndex === null && (
         <p className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pulse rounded-full bg-pop px-4 py-2 text-xs font-bold text-white">
-          사진 올리는 중…
+          사진 올리는 중이에요…
         </p>
       )}
 
@@ -556,7 +558,7 @@ export default function PlayScreen({
         >
           <img
             src={viewing.url}
-            alt={viewing.caption || "파티 사진"}
+            alt={viewing.caption || "파티에서 찍은 사진"}
             className="max-h-[70vh] w-full rounded-2xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />
@@ -565,7 +567,7 @@ export default function PlayScreen({
             <p className="text-center text-xs text-accent">🎤 {viewing.mc_reaction}</p>
           )}
           <p className="text-center text-xs text-white/50">
-            이미지를 길게 눌러 폰에 저장할 수 있어요.
+            사진을 길게 누르면 폰에 저장돼요.
           </p>
           <button onClick={() => setViewing(null)} className={`${BTN} mx-auto bg-white/15`}>
             닫기
@@ -667,7 +669,7 @@ function JoinForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const name = nickname.trim();
-    if (!name) return setMessage("닉네임을 입력해 주세요.");
+    if (!name) return setMessage("TV에 뜰 이름을 정해 주세요.");
     if (!selfie && !intro.trim()) {
       return setMessage("셀카 1장 또는 자기소개를 넣어야 캐릭터를 만들 수 있어요.");
     }
@@ -695,13 +697,13 @@ function JoinForm({
         <p className="text-xs font-semibold tracking-widest text-accent">방 {code}</p>
         <h1 className="mt-1 text-2xl font-black">파티에 입장하기</h1>
         <p className="mt-1 text-sm text-white/60">
-          닉네임과 셀카(또는 자기소개) 하나면 끝. 캐릭터와 빙고판은 들어가서 만들어져요.
+          이름과 셀카(또는 자기소개) 하나면 끝이에요. 캐릭터와 빙고판은 들어가면 AI가 만들어 줘요.
         </p>
       </div>
 
       {ended && (
         <p className="rounded-xl bg-white/10 px-3 py-2 text-xs text-white/70">
-          이미 끝난 파티예요. 입장은 안 되지만 앨범 링크로는 사진을 볼 수 있어요.
+          이미 끝난 파티예요. 대신 앨범에서 그날 사진은 볼 수 있어요.
         </p>
       )}
 
@@ -774,7 +776,7 @@ function JoinForm({
           disabled={busy || ended}
           className={`${BTN} w-full bg-accent text-lg text-black`}
         >
-          {busy ? "입장 중…" : "입장하기"}
+          {busy ? "입장하는 중이에요…" : "파티 입장하기"}
         </button>
         <button type="button" onClick={onAlbumOnly} className={`${BTN} w-full bg-white/10`}>
           앨범만 둘러보기
