@@ -1,0 +1,11 @@
+
+=== [START] Beginning [F7] Ending Ticket Loop ===
+Target: [F7] 엔딩 개인화 네컷 티켓 & 전리품 캔버스 합성 기능
+Next Task: Task 1 - F7 네컷 티켓 및 프레임 데이터 타입 정의 & 프리셋 구축
+
+=== [2026-08-29] Task 1 Completed ===
+- **작업 내역**:
+  - `types/ticket.ts` 생성: `TicketFrame` 및 `TicketComposition` 데이터 타입 정의
+  - `data/preset-frames.ts` 생성: 기본 무료 프레임 3종(클래식 영수증, 네온 파티, 레트로 롤필름)과 해금 프레임 2종(골드 트로피, 사이버펑크) 데이터 구축
+  - `npx tsc --noEmit`를 통해 타입 검사 및 빌드 에러 없음 확인
+- **다음 태스크**: Task 2 - 캔버스 결정적 합성 유틸리티 구현 (`lib/ticket-composer.ts`)
