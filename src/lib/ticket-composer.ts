@@ -1,162 +1,120 @@
-import { TicketComposition, TicketFrame } from '../types/ticket';
+import { TicketCompositionData } from '../types/ticket';
 import { PRESET_FRAMES } from '../data/preset-frames';
 
-const TICKET_WIDTH = 1080;
-const TICKET_HEIGHT = 1920;
-
-// Helper to load image securely and handle CORS
-const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous'; // Prevent CORS issues
-    img.onload = () => resolve(img);
-    img.onerror = () => {
-      console.warn(`Failed to load image: ${src}`);
-      // Return a 1x1 transparent image on failure to prevent entire canvas from failing
-      const fallback = new Image();
-      fallback.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
-      fallback.onload = () => resolve(fallback);
-    };
-    img.src = src;
-  });
-};
-
-// Fill a rounded rectangle path on canvas
-const roundRect = (
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number
-) => {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-};
-
-export const generateTicketImage = async (
-  composition: Omit<TicketComposition, 'id' | 'composedImageUrl' | 'createdAt'>
-): Promise<string> => {
+export async function composeTicketCanvas(data: TicketCompositionData): Promise<string> {
   const canvas = document.createElement('canvas');
-  canvas.width = TICKET_WIDTH;
-  canvas.height = TICKET_HEIGHT;
+  const width = 1080;
+  const height = 1920;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context not available');
 
-  if (!ctx) {
-    throw new Error('Failed to get canvas 2D context');
-  }
+  const frame = PRESET_FRAMES.find(f => f.id === data.frameId) || PRESET_FRAMES[0];
 
-  // 1. Find frame
-  const frame: TicketFrame = PRESET_FRAMES.find(f => f.id === composition.frameId) || PRESET_FRAMES[0];
+  ctx.fillStyle = frame.bgColor;
+  ctx.fillRect(0, 0, width, height);
 
-  // 2. Draw Background
-  ctx.fillStyle = frame.backgroundColor;
-  ctx.fillRect(0, 0, TICKET_WIDTH, TICKET_HEIGHT);
-
-  // 3. Draw Border
-  ctx.strokeStyle = frame.borderColor;
+  ctx.strokeStyle = frame.accentColor;
   ctx.lineWidth = 16;
-  ctx.strokeRect(8, 8, TICKET_WIDTH - 16, TICKET_HEIGHT - 16);
+  ctx.strokeRect(32, 32, width - 64, height - 64);
 
-  // 4. Load Photos & Avatars
-  const images = await Promise.all(
-    Array.from({ length: 4 }).map(async (_, i) => {
-      const url = composition.photoUrls[i];
-      if (url) {
-        return loadImage(url);
-      }
-      // If photo doesn't exist, load avatar as placeholder
-      return loadImage(composition.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=fallback');
-    })
-  );
+  ctx.fillStyle = frame.textColor;
+  ctx.textAlign = 'center';
 
-  // 5. Draw 2x2 Photo Grid
-  // Grid layout parameters
-  const padding = 60;
-  const gap = 30;
-  const topOffset = 250;
-  const photoWidth = (TICKET_WIDTH - (padding * 2) - gap) / 2;
-  const photoHeight = photoWidth * 1.33; // 3:4 aspect ratio for photos
+  ctx.font = 'bold 54px sans-serif';
+  ctx.fillText('SNAPQUEST PARTY TICKET', width / 2, 130);
 
-  images.forEach((img, i) => {
-    const row = Math.floor(i / 2);
+  ctx.font = '32px monospace';
+  ctx.fillStyle = frame.accentColor;
+  ctx.fillText(`ROOM #${data.roomCode} • ${data.dateStr}`, width / 2, 190);
+
+  ctx.strokeStyle = '#888888';
+  ctx.lineWidth = 4;
+  ctx.setLineDash([16, 12]);
+  ctx.beginPath();
+  ctx.moveTo(80, 230);
+  ctx.lineTo(width - 80, 230);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const gridX = 90;
+  const gridY = 270;
+  const photoW = 430;
+  const photoH = 540;
+  const gap = 40;
+
+  for (let i = 0; i < 4; i++) {
     const col = i % 2;
-    const x = padding + (col * (photoWidth + gap));
-    const y = topOffset + (row * (photoHeight + gap));
+    const row = Math.floor(i / 2);
+    const x = gridX + col * (photoW + gap);
+    const y = gridY + row * (photoH + gap);
 
-    ctx.save();
-    roundRect(ctx, x, y, photoWidth, photoHeight, 20);
-    ctx.clip();
-    
-    // Draw image maintaining aspect ratio and covering the area (object-fit: cover)
-    const imgRatio = img.width / img.height;
-    const boxRatio = photoWidth / photoHeight;
-    
-    let renderWidth, renderHeight, offsetX, offsetY;
-    if (imgRatio > boxRatio) {
-      // Image is wider than box
-      renderHeight = photoHeight;
-      renderWidth = img.width * (photoHeight / img.height);
-      offsetX = x - (renderWidth - photoWidth) / 2;
-      offsetY = y;
+    ctx.fillStyle = frame.theme === 'receipt' ? '#E5E7EB' : '#1E293B';
+    ctx.fillRect(x, y, photoW, photoH);
+
+    const photoUrl = data.photoUrls[i];
+    if (photoUrl) {
+      try {
+        const img = await loadImage(photoUrl);
+        ctx.drawImage(img, x, y, photoW, photoH);
+      } catch (err) {
+        drawCardPlaceholder(ctx, x, y, photoW, photoH, i + 1, data.participantName, frame);
+      }
     } else {
-      // Image is taller than box
-      renderWidth = photoWidth;
-      renderHeight = img.height * (photoWidth / img.width);
-      offsetX = x;
-      offsetY = y - (renderHeight - photoHeight) / 2;
+      drawCardPlaceholder(ctx, x, y, photoW, photoH, i + 1, data.participantName, frame);
     }
 
-    ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
-    
-    // Add inner shadow/border
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    ctx.restore();
-  });
+    ctx.strokeStyle = '#FFFFFF33';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(x, y, photoW, photoH);
+  }
 
-  // 6. Draw Top Texts
-  ctx.fillStyle = frame.theme === 'dark' ? '#FFFFFF' : '#333333';
+  const footerY = 1450;
+  ctx.strokeStyle = '#888888';
+  ctx.lineWidth = 4;
+  ctx.setLineDash([16, 12]);
+  ctx.beginPath();
+  ctx.moveTo(80, footerY);
+  ctx.lineTo(width - 80, footerY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = frame.accentColor;
+  ctx.roundRect ? ctx.roundRect(140, footerY + 40, width - 280, 160, 24) : ctx.fillRect(140, footerY + 40, width - 280, 160);
+  ctx.fill();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 36px sans-serif';
+  ctx.fillText(`🎉 [${data.participantName}] 님의 공식 칭호`, width / 2, footerY + 95);
+
+  ctx.font = 'extrabold 52px sans-serif';
+  ctx.fillText(`"${data.titleText}"`, width / 2, footerY + 165);
+
+  ctx.fillStyle = frame.textColor;
+  ctx.font = '28px monospace';
+  ctx.fillText('★ 7 DAYS MEMORY ARCHIVE • INSTAGRAM @SNAPQUEST ★', width / 2, footerY + 280);
+
+  return canvas.toDataURL('image/png');
+}
+
+function drawCardPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, index: number, name: string, frame: any) {
+  ctx.fillStyle = frame.theme === 'receipt' ? '#D1D5DB' : '#334155';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = frame.theme === 'receipt' ? '#4B5563' : '#94A3B8';
+  ctx.font = 'bold 32px sans-serif';
   ctx.textAlign = 'center';
-  
-  // Title (F6 Title / Room Code)
-  ctx.font = 'bold 64px sans-serif';
-  ctx.fillText(composition.titleText || `Room ${composition.roomId}`, TICKET_WIDTH / 2, 130);
-  
-  // Date
-  ctx.font = '32px sans-serif';
-  ctx.fillStyle = frame.theme === 'dark' ? '#CCCCCC' : '#666666';
-  const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  ctx.fillText(`${today} | SnapQuest`, TICKET_WIDTH / 2, 190);
+  ctx.fillText(`CUT #${index}`, x + w / 2, y + h / 2 - 20);
+  ctx.font = '24px sans-serif';
+  ctx.fillText(`${name}의 특별한 순간`, x + w / 2, y + h / 2 + 30);
+}
 
-  // 7. Draw Bottom Texts
-  const bottomOffset = topOffset + (photoHeight * 2) + gap + 120;
-  
-  // Nickname
-  ctx.fillStyle = frame.theme === 'dark' ? '#FFFFFF' : '#333333';
-  ctx.font = 'bold 56px sans-serif';
-  ctx.fillText(composition.participantName, TICKET_WIDTH / 2, bottomOffset);
-
-  // D-7 Notice
-  ctx.font = '28px sans-serif';
-  ctx.fillStyle = frame.theme === 'dark' ? '#FF6B6B' : '#E03131';
-  ctx.fillText('※ 링크 및 이미지는 7일 후 만료됩니다.', TICKET_WIDTH / 2, bottomOffset + 70);
-
-  // Bottom Decoration / Logo Space
-  ctx.fillStyle = frame.theme === 'dark' ? '#444444' : '#DDDDDD';
-  ctx.fillRect(TICKET_WIDTH / 2 - 150, TICKET_HEIGHT - 100, 300, 8);
-
-  // Return as Data URL (PNG)
-  return canvas.toDataURL('image/png', 1.0);
-};
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = src;
+  });
+}

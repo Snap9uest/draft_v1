@@ -1,21 +1,20 @@
 export interface TicketFrame {
   id: string;
   name: string;
-  theme: string;
-  backgroundColor: string;
-  borderColor: string;
-  isLocked: boolean;
-  unlockCondition?: string;
+  theme: 'receipt' | 'neon' | 'retro' | 'gold';
+  bgColor: string;
+  textColor: string;
+  accentColor: string;
+  isLocked?: boolean;
 }
 
-export interface TicketComposition {
+export interface TicketCompositionData {
   roomId: string;
-  participantId: string;
+  roomCode: string;
   participantName: string;
   titleText: string;
-  avatarUrl?: string;
-  photoUrls: [string, string, string, string]; // exactly 4 photos
+  avatarEmoji?: string;
+  photoUrls: string[];
   frameId: string;
-  composedImageUrl: string;
-  createdAt: number;
+  dateStr: string;
 }
