@@ -56,7 +56,7 @@
     - 호스트 토큰 인증 실패 시 "권한 없음" 안내 화면 표시
   - *Done when*: 호스트 패널에서 버튼 클릭 시 파티 상태(`status`)가 순차적으로 변경됨
 
-- [ ] **Task 5: 파티 생애주기 실시간 동기화 훅 (`useRoomSession`)**
+- [x] **Task 5: 파티 생애주기 실시간 동기화 훅 (`useRoomSession`)**
   - `hooks/useRoomSession.ts`:
     - 방 상태(`status`), 톤 프리셋, 리워드 토글 관리
     - `changeStatus(nextStatus)`, `updateTonePreset(tone)`, `toggleReward(bool)` 액션 제공

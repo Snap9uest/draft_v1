@@ -2,11 +2,14 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Room } from '../../types/room';
 import { useEffect, useState } from 'react';
 
+import { useRoomSession } from '../../hooks/useRoomSession';
+
 interface TvLobbyViewProps {
   room: Room;
 }
 
-export function TvLobbyView({ room }: TvLobbyViewProps) {
+export function TvLobbyView({ room: initialRoom }: TvLobbyViewProps) {
+  const { room } = useRoomSession(initialRoom);
   const [joinUrl, setJoinUrl] = useState('');
 
   useEffect(() => {

@@ -5,6 +5,8 @@ import { Room, RoomStatus, TonePreset } from '../../types/room';
 import { Users, Play, Trophy, Power, Settings } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
+import { useRoomSession } from '../../hooks/useRoomSession';
+
 interface HostControlPanelProps {
   initialRoom: Room;
 }
@@ -13,7 +15,7 @@ export function HostControlPanel({ initialRoom }: HostControlPanelProps) {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   
-  const [room, setRoom] = useState<Room>(initialRoom);
+  const { room, changeStatus, updateTonePreset, toggleReward } = useRoomSession(initialRoom);
 
   // token verification
   if (room.hostToken !== token) {
@@ -29,15 +31,11 @@ export function HostControlPanel({ initialRoom }: HostControlPanelProps) {
     if (newStatus === 'ended') {
       if (!confirm('정말로 파티를 종료하시겠습니까?')) return;
     }
-    setRoom(prev => ({ ...prev, status: newStatus }));
+    changeStatus(newStatus);
   };
 
   const handlePresetChange = (preset: TonePreset) => {
-    setRoom(prev => ({ ...prev, tonePreset: preset }));
-  };
-
-  const toggleReward = () => {
-    setRoom(prev => ({ ...prev, rewardToggle: !prev.rewardToggle }));
+    updateTonePreset(preset);
   };
 
   // derived state

@@ -53,3 +53,13 @@ Next Task: Task 1 - F9 방 및 파티 생애주기 데이터 타입 & 상태 모
   - 토큰 인증 실패 시 예외 처리 화면 추가
   - `npm run build`로 타입 에러 없이 정상 빌드 확인
 - **다음 태스크**: Task 5 - 파티 생애주기 실시간 동기화 훅 (`useRoomSession`)
+
+=== [2026-08-29] Task 5 Completed ===
+- **작업 내역**:
+  - `hooks/useRoomSession.ts` 생성: 방 상태, 톤 프리셋, 리워드 토글 상태를 관리하는 커스텀 훅 구현.
+  - `BroadcastChannel`을 활용하여 같은 기기의 여러 탭(호스트 뷰와 TV 뷰) 간 상태 실시간 동기화 적용.
+  - 로컬 스토리지(`snapquest_rooms`)와 연동하여 호스트 재접속 시 이전 진행 상태를 자동으로 복원하도록 구현.
+  - `components/host/HostControlPanel.tsx` 업데이트: 기존 로컬 상태를 `useRoomSession` 훅으로 대체.
+  - `components/room/TvLobbyView.tsx` 업데이트: props로 받은 `initialRoom`을 `useRoomSession` 훅에 전달하여 실시간 상태 반영.
+  - `npm run build`로 빌드 성공 확인.
+- **다음 태스크**: Task 6 - F9 전체 플로우 통합 및 빌드 검증
