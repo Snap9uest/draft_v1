@@ -78,21 +78,25 @@ export default function Home() {
     setBusy("demo");
     setError("");
     try {
-      const { room, hostToken } = (await postJson("/api/room", {
-        isDemo: true,
-        tonePreset: "파티",
-      })) as { room: { code: string }; hostToken: string };
-      setHostToken(room.code, hostToken);
-      // 봇 투입이 실패해도 방은 쓸 수 있다 — 링크는 그대로 연다.
-      await postJson(`/api/room/${room.code}/bots`, { hostToken }).catch(() => null);
+      // 고정 코드의 방 하나를 재사용한다. 라우트가 없으면 만들고, 비었으면
+      // 봇과 사진을 다시 채우므로, 앞사람이 어지럽힌 뒤에 들어와도 파티가
+      // 진행 중인 상태로 열린다.
+      const res = await fetch("/api/demo");
+      const { code, hostToken } = (await res.json()) as {
+        code?: string;
+        hostToken?: string;
+        error?: string;
+      };
+      if (!res.ok || !code) throw new Error("데모 방을 준비하지 못했습니다.");
+      if (hostToken) setHostToken(code, hostToken);
       try {
-        localStorage.setItem(DEMO_KEY, room.code);
+        localStorage.setItem(DEMO_KEY, code);
       } catch {
         // 저장 못 해도 이번 세션에서는 아래 링크로 들어갈 수 있다
       }
-      setFreshDemo(room.code);
+      setFreshDemo(code);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "데모 방을 만들지 못했습니다.");
+      setError(e instanceof Error ? e.message : "데모 방을 준비하지 못했습니다.");
     } finally {
       setBusy(null);
     }
@@ -190,7 +194,8 @@ export default function Home() {
         <Card className="mt-8">
           <h2 className="text-sm font-bold text-white">심사관용 데모</h2>
           <p className="mt-1 text-sm leading-relaxed text-white/60">
-            봇 참가자 6명이 들어있는 방을 만들고, 세 화면 링크를 한 번에 엽니다.
+            봇 참가자 6명이 이미 놀고 있는 방입니다. 혼자 열어도 파티가 진행
+            중이고, 세 화면을 탭으로 나란히 볼 수 있습니다.
           </p>
 
           <div aria-hidden className="mt-3 flex -space-x-2">
@@ -213,11 +218,7 @@ export default function Home() {
             onClick={createDemo}
             disabled={busy !== null}
           >
-            {busy === "demo"
-              ? "데모 방 준비 중…"
-              : demoCode
-                ? "새 데모 방 만들기"
-                : "데모 방 만들기"}
+            {busy === "demo" ? "데모 방 준비 중…" : "데모 방 열기"}
           </Button>
 
           {demoCode && (

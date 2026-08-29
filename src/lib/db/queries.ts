@@ -57,20 +57,19 @@ export async function getRoomPhotos(
   }
 }
 
+/** 0002 이후 anon 은 session_token 컬럼을 못 읽는다 — 서버 라우트를 거친다. */
 export async function getMyParticipant(
-  roomId: string,
+  code: string,
   sessionToken: string,
 ): Promise<Participant | null> {
   if (!sessionToken) return null;
   try {
-    const { data, error } = await browserDb()
-      .from("participants")
-      .select(PARTICIPANT_COLS)
-      .eq("room_id", roomId)
-      .eq("session_token", sessionToken)
-      .maybeSingle();
-    if (error) throw error;
-    return (data ?? null) as Participant | null;
+    const res = await fetch(
+      `/api/room/${encodeURIComponent(code)}/me?sessionToken=${encodeURIComponent(sessionToken)}`,
+    );
+    if (!res.ok) return null;
+    const { participant } = (await res.json()) as { participant: Participant };
+    return participant ?? null;
   } catch (error) {
     warn("내 참가자", error);
     return null;

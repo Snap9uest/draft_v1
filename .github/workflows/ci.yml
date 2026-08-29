@@ -23,14 +23,12 @@ jobs:
 
       - run: npm ci
 
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Lint
-        run: npx eslint .
-
-      # Placeholders, not the real keys: the build only needs these to exist,
-      # and a PR from a fork cannot read repository secrets anyway.
+      # Runs before the typecheck because Next generates route types
+      # (LayoutProps, PageProps) into .next/types during the build, and
+      # tsc cannot resolve them until they exist.
+      #
+      # Placeholders, not the real keys: the build only needs these to be
+      # set, and a PR from a fork cannot read repository secrets anyway.
       - name: Build
         run: npm run build
         env:
@@ -38,6 +36,12 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
           SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint .
 
       # Catches a key pasted into tracked source. .env files are ignored, so a
       # hit here means it reached a file that would ship.

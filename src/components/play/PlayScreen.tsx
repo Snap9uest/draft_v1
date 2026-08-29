@@ -79,7 +79,7 @@ export default function PlayScreen({
     setRoom(data.room);
     setParticipants(data.participants);
     const [mine, list] = await Promise.all([
-      getMyParticipant(data.room.id, getSessionToken()),
+      getMyParticipant(code, getSessionToken()),
       getRoomPhotos(data.room.id),
     ]);
     // 방금 join 응답으로 채운 me 를 조회 실패로 지워버리지 않는다.
@@ -145,6 +145,13 @@ export default function PlayScreen({
       teardown();
     };
   }, [roomId, load]);
+
+  // 파티가 끝나면 남는 화면은 빙고판이 아니라 앨범이다. 탭은 계속 눌러 되돌릴 수 있다.
+  const ended = room?.status === "ended";
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 종료 전환 1회
+    if (ended) setTab("album");
+  }, [ended]);
 
   async function upload(file: File, cellIndex: number | null) {
     setSheetCell(null);
