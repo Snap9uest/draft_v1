@@ -63,3 +63,15 @@ Next Task: Task 1 - F9 방 및 파티 생애주기 데이터 타입 & 상태 모
   - `components/room/TvLobbyView.tsx` 업데이트: props로 받은 `initialRoom`을 `useRoomSession` 훅에 전달하여 실시간 상태 반영.
   - `npm run build`로 빌드 성공 확인.
 - **다음 태스크**: Task 6 - F9 전체 플로우 통합 및 빌드 검증
+
+=== [2026-08-29] Task 6 Completed ===
+- **작업 내역**:
+  - `components/room/GuestView.tsx` 생성: 게스트 기본 화면 구현 및 방 상태 동기화 처리.
+  - `app/room/[id]/page.tsx` 업데이트: `role` 값이 없을 경우 `GuestView`를 렌더링하도록 연동.
+  - 리워드 토글 비즈니스 규칙 검증: `GuestView` 내에서 `room.rewardToggle` 상태에 따라 리워드 문구가 조건부 렌더링되도록 구현.
+  - `components/host/HostControlPanel.tsx` 업데이트: 호스트 컨트롤 화면에서 `?role=tv` 링크를 쉽게 열 수 있는 "TV 화면 열기" 버튼 추가하여 `/create` 생성 이후 호스트 화면과 TV 화면을 연결하는 플로우 강화.
+  - `npm run build`를 실행하여 타입 에러 없이 성공적으로 전체 애플리케이션 빌드 확인.
+- **해결한 문제**:
+  - 방 생성 직후 호스트 화면에서는 TV 화면에 어떻게 접근하는지 불명확했던 UX를 호스트 패널 내 버튼을 통해 해결.
+  - 게스트 뷰 빈 껍데기를 실제 뷰로 교체하여 비즈니스 규칙 확인.
+- **다음 태스크**: (F9 완료) 다음 F 기능 진행 준비

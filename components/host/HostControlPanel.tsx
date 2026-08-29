@@ -58,8 +58,18 @@ export function HostControlPanel({ initialRoom }: HostControlPanelProps) {
       {/* Header */}
       <header className="p-4 border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-10 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold">호스트 컨트롤</h1>
-          <div className="text-sm text-gray-400">방 코드: <span className="text-white font-mono">{room.code}</span></div>
+          <h1 className="text-lg font-bold flex items-center gap-2">
+            호스트 컨트롤
+            <a 
+              href={`/room/${room.id}?role=tv`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded ml-2"
+            >
+              TV 화면 열기
+            </a>
+          </h1>
+          <div className="text-sm text-gray-400 mt-1">방 코드: <span className="text-white font-mono">{room.code}</span></div>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusBadgeColor}`}>

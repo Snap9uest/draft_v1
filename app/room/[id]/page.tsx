@@ -6,6 +6,8 @@ import { Room } from '../../../types/room';
 import { TvLobbyView } from '../../../components/room/TvLobbyView';
 import { HostControlPanel } from '../../../components/host/HostControlPanel';
 
+import { GuestView } from '../../../components/room/GuestView';
+
 export default function RoomPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -62,9 +64,5 @@ export default function RoomPage() {
     return <HostControlPanel initialRoom={room} />;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-      <h1>게스트 화면 (구현 예정)</h1>
-    </div>
-  );
+  return <GuestView initialRoom={room} />;
 }
