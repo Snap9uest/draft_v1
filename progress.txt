@@ -9,3 +9,11 @@ Next Task: Task 1 - F7 네컷 티켓 및 프레임 데이터 타입 정의 & 프
   - `data/preset-frames.ts` 생성: 기본 무료 프레임 3종(클래식 영수증, 네온 파티, 레트로 롤필름)과 해금 프레임 2종(골드 트로피, 사이버펑크) 데이터 구축
   - `npx tsc --noEmit`를 통해 타입 검사 및 빌드 에러 없음 확인
 - **다음 태스크**: Task 2 - 캔버스 결정적 합성 유틸리티 구현 (`lib/ticket-composer.ts`)
+
+=== [2026-08-29] Task 2 Completed ===
+- **작업 내역**:
+  - `src/lib/ticket-composer.ts` 생성 및 HTML5 Canvas 기반 티켓 합성 유틸리티 구현.
+  - CORS 처리된 이미지 로드 함수 및 라운드 렉탱글 클리핑 기능 개발.
+  - 1080x1920 해상도에 2x2 사진 그리드, 닉네임, 방 코드, 날짜 및 만료 안내 문구 배치.
+  - 타입 검사(tsc) 및 Next.js 애플리케이션 빌드 검증 성공 확인.
+- **다음 태스크**: Task 3 - 게스트용 네컷 사진 선택 & 프레임 커스텀 UI (`components/ticket/TicketCustomizer.tsx`)
