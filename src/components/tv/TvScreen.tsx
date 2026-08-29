@@ -393,7 +393,6 @@ function PhotoWall({
   );
 }
 
-/** 사진 0장이어도 빈 화면을 만들지 않는다 — 실제 빙고판 미션을 띄워둔다. */
 function WaitingWall({
   participants,
   tick,
@@ -401,42 +400,19 @@ function WaitingWall({
   participants: Participant[];
   tick: number;
 }) {
-  const live = participants
-    .flatMap((p) =>
-      (p.board ?? [])
-        .filter((c: BoardCell) => c.status !== "done")
-        .map((c) => ({ mission: c.mission, who: p.nickname })),
-    )
-    .slice(0, 6);
-  const cards = live.length
-    ? live
-    : SAMPLE_MISSIONS.map((mission) => ({ mission, who: "예시 미션" }));
-
   return (
     <>
-      <div className="grid flex-1 content-center grid-cols-3 gap-[2vw]">
-        {cards.map((c, i) => (
-          <div
-            key={`${c.who}-${c.mission}-${i}`}
-            className="sq-breathe flex min-h-[22vh] flex-col justify-between rounded-3xl bg-white/5 p-[1.6vw]"
-            style={{ animationDelay: `${i * 0.2}s` }}
-          >
-            <p className="text-[clamp(1.1rem,1.8vw,2.4rem)] font-bold leading-snug">
-              {c.mission}
-            </p>
-            <p className="text-[clamp(.85rem,1.1vw,1.5rem)] text-white/50">{c.who}</p>
-          </div>
-        ))}
-      </div>
-      <McBanner
-        text={
-          [
-            "첫 인증 사진을 기다리는 중! 미션을 찍어서 올려주세요 📸",
-            "사진이 올라오면 바로 이 화면에 뜹니다 ✨",
-            "빙고 한 줄이면 특별 프레임이 열려요 🎯",
-          ][tick % 3]
-        }
-      />
+      <Center>
+        <div className="flex flex-col items-center gap-6 p-8 rounded-3xl bg-white/5 border border-white/10 max-w-2xl text-center">
+          <span className="text-6xl animate-bounce">📸</span>
+          <h2 className="text-3xl font-extrabold text-white">첫 번째 미션 인증 사진을 기다리고 있어요!</h2>
+          <p className="text-xl text-white/70 leading-relaxed">
+            폰 화면의 3×3 빙고판에서 미션을 골라 사진을 촬영해 보세요.<br />
+            인증 즉시 이 대형 화면에 실시간으로 나타납니다 ✨
+          </p>
+        </div>
+      </Center>
+      <McBanner text="첫 인증 사진의 주인공은 누구일까요? 지금 바로 사진을 올려보세요! 🚀" />
     </>
   );
 }
